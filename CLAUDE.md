@@ -6,7 +6,7 @@ This document provides the complete setup instructions for our cross-platform ap
 ## Tech Stack
 
 ### Frontend
-- **Web App**: Next.js 14+ (App Router), React, TypeScript, Tailwind CSS
+- **Web App**: Next.js 14+ (App Router), React, TypeScript, Tailwind CSS, shadcn/ui
 - **Mobile App**: React Native with Expo, TypeScript
 
 ### Backend
@@ -42,6 +42,9 @@ npm install @supabase/supabase-js @supabase/ssr
 
 # Install additional dependencies
 npm install zod react-hook-form @hookform/resolvers
+
+# Install shadcn/ui (after initial setup)
+npx shadcn@latest init
 ```
 
 **Create environment files:**
@@ -52,17 +55,33 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
+**shadcn/ui Setup:**
+
+When running `npx shadcn@latest init`, configure:
+- Style: **Default**
+- Base color: **Slate** (or your preference)
+- CSS variables: **Yes**
+
+Add components as needed:
+```bash
+npx shadcn@latest add button
+npx shadcn@latest add input
+npx shadcn@latest add card
+npx shadcn@latest add form
+# See https://ui.shadcn.com for all components
+```
+
 **Recommended folder structure:**
 ```
 web-app/
 ├── src/
 │   ├── app/              # Next.js pages (App Router)
 │   ├── components/       # Reusable components
-│   │   ├── ui/          # Base UI components
+│   │   ├── ui/          # shadcn/ui components (auto-generated)
 │   │   └── features/    # Feature-specific components
 │   ├── lib/             # Utilities and configurations
 │   │   ├── supabase/    # Supabase client setup
-│   │   └── utils.ts     # Helper functions
+│   │   └── utils.ts     # Helper functions (includes cn utility)
 │   ├── hooks/           # Custom React hooks
 │   ├── types/           # TypeScript type definitions
 │   └── services/        # API services and data fetching
@@ -848,6 +867,34 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 - Use TypeScript for type safety
 - Keep components small and focused
 
+**Web App (with shadcn/ui):**
+- Use shadcn/ui components for consistent design
+- Customize components in `src/components/ui/`
+- Build feature components in `src/components/features/`
+- Leverage the `cn()` utility from `src/lib/utils.ts` for className merging
+
+Example shadcn/ui component usage:
+```typescript
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+export function LoginForm() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input placeholder="Email" type="email" />
+        <Input placeholder="Password" type="password" />
+        <Button>Sign In</Button>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
 ### State Management
 
 **Start simple:**
@@ -900,9 +947,11 @@ npx supabase db diff # Generate migration
 ## Resources
 
 - **Next.js Docs**: https://nextjs.org/docs
+- **shadcn/ui**: https://ui.shadcn.com (UI component library)
 - **Expo Docs**: https://docs.expo.dev
 - **Supabase Docs**: https://supabase.com/docs
 - **Vercel Docs**: https://vercel.com/docs
+- **Tailwind CSS**: https://tailwindcss.com/docs
 - **Claude Code Docs**: https://docs.claude.com/en/docs/claude-code
 - **Cursor Docs**: https://cursor.sh/docs
 
