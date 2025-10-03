@@ -16,6 +16,8 @@ Complete initialization of the Adaptive Outbound cross-platform application mono
 - Initialized Git repository
 - Created comprehensive `.gitignore` for all environments
 - Connected to GitHub: https://github.com/AdrienGGB/adaptative-outbound
+- **Branch Strategy**: `main` (production) and `dev` (development)
+- Created branching workflow documentation (`.github/BRANCHING_STRATEGY.md`)
 
 #### 2. Web App (Next.js)
 - **Framework**: Next.js 15.5.4 with App Router
@@ -190,7 +192,7 @@ SUPABASE_URL=https://hymtbydkynmkyesoaucl.supabase.co
 SUPABASE_ANON_KEY=[configured]
 ```
 
-### Git Commits
+### Git Commits (main branch)
 1. **ebd15f1** - "Initial project setup with Next.js, Expo, and shared code structure"
 2. **ea94b6a** - "Configure Supabase clients and complete mobile app setup"
 3. **e16e688** - "Add project history documentation"
@@ -199,6 +201,11 @@ SUPABASE_ANON_KEY=[configured]
 6. **0896f78** - "Update PROJECT_HISTORY with complete setup summary"
 7. **7d7f34c** - "Add permissions documentation and template"
 8. **91b7717** - "Add shadcn/ui to tech stack and setup guide"
+9. **f2e662e** - "Update PROJECT_HISTORY with final setup additions"
+
+### Branch Structure
+- **main**: Production-ready code (auto-deploys to Vercel)
+- **dev**: Active development branch (created from main)
 
 ### Testing Status
 - ✅ Web app builds successfully

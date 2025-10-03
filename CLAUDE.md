@@ -399,12 +399,30 @@ SUPABASE_ANON_KEY=your_anon_key_here
 
 **Branch Strategy:**
 ```bash
-main              # Production-ready code (protected)
-├── develop       # Development branch (optional)
-├── feature/auth  # Feature branches
+main              # Production-ready code (protected, auto-deploys to Vercel)
+├── dev           # Active development branch
+├── feature/auth  # Feature branches (created from dev)
 ├── feature/posts
 ├── bugfix/login-error
 └── hotfix/critical-bug
+```
+
+**Workflow:**
+```bash
+# Start new feature
+git checkout dev
+git pull origin dev
+git checkout -b feature/your-feature
+
+# Work and commit
+git add .
+git commit -m "feat: your changes"
+git push -u origin feature/your-feature
+
+# Merge to dev (via PR or direct)
+# When dev is stable, merge dev -> main for production
+
+# See .github/BRANCHING_STRATEGY.md for complete guide
 ```
 
 **Commit Messages:**
