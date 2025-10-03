@@ -199,9 +199,32 @@ SUPABASE_ANON_KEY=[configured]
 - **Supabase Dashboard**: https://supabase.com/dashboard/project/hymtbydkynmkyesoaucl
 - **Setup Guide**: See CLAUDE.md for detailed instructions
 
+### 8. Claude Code Sub-Agents Setup
+Installed 10 specialized AI agents for development assistance:
+
+**Essential Agents:**
+1. **fullstack-engineer** - End-to-end feature development (web + mobile + backend)
+2. **nextjs-pro** - Next.js 14+ expertise (App Router, Server Components, Server Actions)
+3. **mobile-developer** - React Native/Expo development (native features, navigation)
+4. **typescript-pro** - Advanced TypeScript patterns and type safety
+5. **backend-architect** - Database design, RLS policies, API architecture
+
+**Quality & Testing Agents:**
+6. **frontend-specialist** - Frontend best practices and optimization
+7. **react-pro** - Advanced React patterns and performance
+8. **code-reviewer** - Code quality reviews and refactoring
+9. **security-auditor** - Security vulnerability detection
+10. **test-engineer** - Testing strategy and implementation
+
+**Location**: `.claude/agents/`
+**Usage**: `@agent-name Your request`
+**Documentation**: See `.claude/agents/README.md`
+**Source**: https://github.com/stretchcloud/claude-code-unified-agents
+
 ### Notes
 - All sensitive credentials are stored in `.env` files (excluded from Git)
 - `.env.example` templates provided for team members
 - Auto-deploy configured: push to main triggers Vercel deployment
 - Monorepo structure allows code sharing between web and mobile
+- 10 specialized AI agents installed for development assistance
 - Ready to start building features following the parallel thinking approach
