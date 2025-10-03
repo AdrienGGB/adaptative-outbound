@@ -1,0 +1,175 @@
+{
+    "model": "claude-sonnet-4-5-20250929",
+    "description": "Cross-platform app development with Next.js web app and React Native mobile app, using Supabase backend. Intermediate vibe coder - explain decisions and choices clearly.",
+    
+    "permissions": {
+      "edit": "allow",
+      "read": "allow",
+      "browser": "ask",
+      "command": "ask"
+    },
+    
+    "rules": [
+      "Always explain what you're doing before making changes",
+      "Break down complex tasks into smaller steps and confirm each step",
+      "Use TypeScript for all code - it helps catch errors early",
+      "Write comments explaining non-obvious code logic",
+      "Follow existing code patterns in the project",
+      "Test changes locally before moving on",
+      "When creating components, make them reusable",
+      "Keep web and mobile implementations consistent where possible",
+      "Use shared code (types, services, validation) between web and mobile",
+      "Always handle loading, error, and success states in UI",
+      "Use Tailwind CSS for web styling, StyleSheet for mobile",
+      "Include proper TypeScript types for all props and functions",
+      "Add helpful error messages for users",
+      "Consider accessibility - proper labels, focus states, keyboard navigation",
+      "Ask before installing new dependencies",
+      "Prefer built-in solutions over adding new libraries",
+      "When using Supabase, always implement Row Level Security (RLS) policies",
+      "Keep environment variables secure - never hardcode secrets",
+      "Write clean, readable code over clever code",
+      "If something is unclear in requirements, ask before implementing"
+    ],
+    
+    "conventions": {
+      "naming": {
+        "components": "PascalCase (e.g., UserProfile.tsx)",
+        "functions": "camelCase (e.g., getUserData)",
+        "constants": "UPPER_SNAKE_CASE (e.g., API_BASE_URL)",
+        "files": "kebab-case for utilities (e.g., auth-helper.ts), PascalCase for components",
+        "types": "PascalCase (e.g., User, AuthResponse)"
+      },
+      "structure": {
+        "imports_order": [
+          "React/React Native imports",
+          "Third-party libraries",
+          "Internal components",
+          "Services and utilities",
+          "Types",
+          "Styles"
+        ],
+        "component_structure": [
+          "Imports",
+          "Types/Interfaces",
+          "Component definition",
+          "Hooks and state",
+          "Event handlers",
+          "Effects",
+          "Render logic",
+          "Styles (if applicable)"
+        ]
+      },
+      "comments": {
+        "use_for": [
+          "Complex business logic",
+          "Non-obvious decisions",
+          "API integrations",
+          "Workarounds or hacks",
+          "TODO items with context"
+        ],
+        "avoid_for": [
+          "Obvious code (e.g., // set loading to true)",
+          "Commented-out code (delete instead)",
+          "Redundant explanations"
+        ]
+      }
+    },
+    
+    "tech_stack": {
+      "web": {
+        "framework": "Next.js 14+ with App Router",
+        "language": "TypeScript",
+        "styling": "Tailwind CSS",
+        "forms": "react-hook-form with Zod validation",
+        "state": "React hooks, Context API",
+        "data_fetching": "Server Components, Server Actions, Supabase client"
+      },
+      "mobile": {
+        "framework": "React Native with Expo",
+        "language": "TypeScript",
+        "styling": "StyleSheet with design tokens",
+        "navigation": "@react-navigation/native",
+        "forms": "react-hook-form with Zod validation",
+        "storage": "@react-native-async-storage/async-storage"
+      },
+      "backend": {
+        "database": "Supabase (PostgreSQL)",
+        "auth": "Supabase Auth",
+        "storage": "Supabase Storage",
+        "realtime": "Supabase Realtime subscriptions"
+      },
+      "shared": {
+        "validation": "Zod",
+        "types": "TypeScript",
+        "utilities": "lodash (when needed)"
+      }
+    },
+    
+    "preferences": {
+      "explanation_style": "intermediate",
+      "code_verbosity": "balanced",
+      "error_handling": "always_explicit",
+      "testing": "ask_before_implementing",
+      "documentation": "inline_comments_and_jsdoc"
+    },
+    
+    "communication": {
+      "before_major_changes": "Explain the approach and ask for confirmation",
+      "after_implementation": "Summarize what was done and next steps",
+      "when_stuck": "Explain the problem and suggest alternatives",
+      "learning_opportunities": "Point out patterns and best practices when relevant"
+    },
+    
+    "safety_checks": {
+      "environment_variables": "Never hardcode - always use .env files",
+      "secrets": "Never commit API keys or passwords",
+      "user_data": "Always validate and sanitize inputs",
+      "error_messages": "Don't expose sensitive information",
+      "dependencies": "Check package reputation before installing",
+      "permissions": "Ask before running terminal commands that modify system"
+    },
+    
+    "file_handling": {
+      "before_editing": "Show current code snippet",
+      "after_editing": "Explain what changed and why",
+      "large_changes": "Break into smaller files or sections",
+      "new_files": "Explain purpose and how it fits in the project",
+      "deletions": "Confirm before deleting files or significant code"
+    },
+    
+    "debugging_approach": {
+      "when_error_occurs": [
+        "Read the error message carefully",
+        "Check recent changes",
+        "Look at relevant code sections",
+        "Test hypotheses incrementally",
+        "Explain findings clearly"
+      ],
+      "logging_strategy": "Use console.log for debugging, remove before committing",
+      "breakpoint_preference": "Suggest using debugger for complex issues"
+    },
+    
+    "code_quality": {
+      "readability": "high_priority",
+      "performance": "optimize_when_needed",
+      "maintainability": "prefer_simple_solutions",
+      "consistency": "follow_existing_patterns",
+      "documentation": "explain_why_not_what"
+    },
+    
+    "feature_implementation": {
+      "planning": "Outline approach before coding",
+      "building": "Start with basic implementation, then enhance",
+      "testing": "Test basic flow first, then edge cases",
+      "refining": "Ask for feedback before moving to next feature"
+    },
+    
+    "learning_mode": {
+      "enabled": true,
+      "explain_patterns": true,
+      "suggest_improvements": true,
+      "teach_best_practices": true,
+      "encourage_questions": true
+    }
+  }
