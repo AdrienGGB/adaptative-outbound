@@ -106,6 +106,7 @@ Complete initialization of the Adaptive Outbound cross-platform application mono
 - React Native (via Expo SDK 54)
 - TypeScript 5.9.3
 - Tailwind CSS
+- shadcn/ui (component library)
 
 **Backend:**
 - Supabase (PostgreSQL, Auth, Storage, Realtime)
@@ -195,6 +196,9 @@ SUPABASE_ANON_KEY=[configured]
 3. **e16e688** - "Add project history documentation"
 4. **152e331** - "Add Claude Code sub-agents for specialized development"
 5. **a248d8f** - "Add Context7 MCP integration for real-time documentation"
+6. **0896f78** - "Update PROJECT_HISTORY with complete setup summary"
+7. **7d7f34c** - "Add permissions documentation and template"
+8. **91b7717** - "Add shadcn/ui to tech stack and setup guide"
 
 ### Testing Status
 - ✅ Web app builds successfully
