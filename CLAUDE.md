@@ -228,6 +228,25 @@ This folder can contain:
 # Add .claude-code config file if needed
 ```
 
+**Notion MCP Integration:**
+
+The Notion MCP server is configured to allow Claude Code to read and interact with your Notion workspace for project documentation and planning.
+
+**Setup:**
+1. Integration already configured with token: `ntn_L4781322716axnHwqKzXzGUtQWEu9Erw29jeyDfyTs5dCU`
+2. Main project page: https://www.notion.so/Active-Outbound-28111cfd31dc81e8ab49d07cbe9d1b0e
+3. MCP server installed via: `@modelcontextprotocol/server-notion`
+
+**Usage:**
+- Claude Code can read Notion pages for project requirements, specifications, and documentation
+- Useful for syncing project planning between Notion and code implementation
+- **Note:** After configuring Notion MCP, restart Claude Code to activate the connection
+
+**Troubleshooting:**
+- If Notion MCP shows "Failed to connect", restart Claude Code
+- Ensure the integration has access to the pages you want Claude to read
+- Share pages with the integration from within Notion if access is needed
+
 ### 8. Git Configuration & Best Practices
 
 **Create `.gitignore` in root:**
