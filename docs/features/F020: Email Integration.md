@@ -158,6 +158,11 @@ CREATE TABLE email_messages (
   message_id VARCHAR(255), -- Provider's message ID
   thread_id VARCHAR(255), -- Email thread ID
 
+  -- Idempotency (prevents duplicate sends on retry)
+  idempotency_key VARCHAR(100) UNIQUE,
+  -- Format: "seq_{sequence_id}_step_{step_num}_contact_{contact_id}_{date}"
+  -- Or: "manual_{user_id}_{timestamp}_{random}"
+
   -- Addresses
   from_address VARCHAR(255) NOT NULL,
   to_addresses TEXT[] NOT NULL,
@@ -218,6 +223,7 @@ CREATE INDEX idx_email_messages_scheduled ON email_messages(scheduled_for)
   WHERE status = 'pending' AND scheduled_for IS NOT NULL;
 CREATE INDEX idx_email_messages_message_id ON email_messages(message_id);
 CREATE INDEX idx_email_messages_thread ON email_messages(thread_id);
+CREATE INDEX idx_email_messages_idempotency ON email_messages(idempotency_key) WHERE idempotency_key IS NOT NULL;
 
 -- RLS
 ALTER TABLE email_messages ENABLE ROW LEVEL SECURITY;

@@ -267,6 +267,10 @@ CREATE TABLE sequence_enrollments (
   retry_count INT DEFAULT 0,
   last_error TEXT,
 
+  -- Execution Lease Pattern (prevents duplicate processing)
+  locked_until TIMESTAMP,
+  locked_by VARCHAR(100), -- Worker ID that acquired the lock
+
   -- Scheduling
   next_step_at TIMESTAMP,
   paused_until TIMESTAMP,
@@ -283,10 +287,13 @@ CREATE TABLE sequence_enrollments (
 CREATE INDEX idx_sequence_enrollments_sequence ON sequence_enrollments(sequence_id);
 CREATE INDEX idx_sequence_enrollments_contact ON sequence_enrollments(contact_id);
 CREATE INDEX idx_sequence_enrollments_status ON sequence_enrollments(status);
-CREATE INDEX idx_sequence_enrollments_next_step ON sequence_enrollments(next_step_at)
-  WHERE status = 'active';
 CREATE INDEX idx_sequence_enrollments_assigned_to ON sequence_enrollments(assigned_to);
 CREATE INDEX idx_sequence_enrollments_email_account ON sequence_enrollments(email_account_id);
+
+-- Critical: Optimized index for execution queries with lease pattern
+CREATE INDEX idx_sequence_enrollments_execution
+  ON sequence_enrollments(status, next_step_at)
+  WHERE status = 'active' AND (locked_until IS NULL OR locked_until < NOW());
 
 -- RLS
 ALTER TABLE sequence_enrollments ENABLE ROW LEVEL SECURITY;

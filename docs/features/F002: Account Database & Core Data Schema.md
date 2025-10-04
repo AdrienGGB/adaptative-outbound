@@ -914,6 +914,173 @@ CREATE POLICY "Admins can manage all tasks in workspace"
   );
 ```
 
+### 9. System Controls (Emergency Management)
+
+```sql
+-- System-wide feature controls for emergency shutdowns
+CREATE TABLE system_controls (
+  feature VARCHAR(50) PRIMARY KEY,
+  -- Features: 'sequence_executor', 'data_imports', 'email_sending', 'ai_generation'
+
+  enabled BOOLEAN DEFAULT TRUE,
+  description TEXT,
+
+  -- Audit
+  updated_by UUID REFERENCES auth.users(id),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Initial feature flags
+INSERT INTO system_controls (feature, enabled, description) VALUES
+  ('sequence_executor', true, 'Controls automated sequence execution'),
+  ('data_imports', true, 'Controls CSV and CRM imports'),
+  ('email_sending', true, 'Controls all email sending'),
+  ('ai_generation', true, 'Controls AI message generation');
+
+CREATE INDEX idx_system_controls_enabled ON system_controls(enabled);
+
+-- RLS (admins only)
+ALTER TABLE system_controls ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Only admins can view system controls"
+  ON system_controls FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE user_id = auth.uid()
+      AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Only admins can manage system controls"
+  ON system_controls FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE user_id = auth.uid()
+      AND role = 'admin'
+    )
+  );
+```
+
+### 10. Dead Letter Queue (Failed Job Management)
+
+```sql
+-- Storage for jobs that failed after max retries
+CREATE TABLE dead_letter_queue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+
+  -- Original Job Info
+  job_id UUID, -- Reference to original job
+  job_type VARCHAR(50) NOT NULL,
+  payload JSONB NOT NULL,
+
+  -- Failure Info
+  error_message TEXT,
+  stack_trace TEXT,
+  attempts INT NOT NULL,
+
+  -- Resolution
+  status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'investigating', 'resolved', 'ignored'
+  resolved_by UUID REFERENCES auth.users(id),
+  resolved_at TIMESTAMP,
+  resolution_notes TEXT,
+
+  -- Metadata
+  failed_at TIMESTAMP DEFAULT NOW(),
+
+  CHECK(status IN ('pending', 'investigating', 'resolved', 'ignored'))
+);
+
+CREATE INDEX idx_dlq_workspace ON dead_letter_queue(workspace_id);
+CREATE INDEX idx_dlq_status ON dead_letter_queue(status) WHERE status = 'pending';
+CREATE INDEX idx_dlq_job_type ON dead_letter_queue(job_type);
+CREATE INDEX idx_dlq_failed_at ON dead_letter_queue(failed_at DESC);
+
+-- RLS
+ALTER TABLE dead_letter_queue ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view DLQ in their workspace"
+  ON dead_letter_queue FOR SELECT
+  USING (
+    workspace_id IN (
+      SELECT workspace_id FROM workspace_members
+      WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Admins can manage DLQ entries"
+  ON dead_letter_queue FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM workspace_members
+      WHERE workspace_members.workspace_id = dead_letter_queue.workspace_id
+      AND workspace_members.user_id = auth.uid()
+      AND workspace_members.role IN ('admin', 'sales_manager')
+    )
+  );
+```
+
+### 11. Import Rollback Support
+
+```sql
+-- Track which accounts were created by each import for rollback capability
+CREATE TABLE import_account_mapping (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  import_id UUID NOT NULL, -- References data_imports(id) from F001
+  account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT NOW(),
+
+  UNIQUE(import_id, account_id)
+);
+
+CREATE INDEX idx_import_mapping_import ON import_account_mapping(import_id);
+CREATE INDEX idx_import_mapping_account ON import_account_mapping(account_id);
+
+-- RLS (inherits from accounts)
+ALTER TABLE import_account_mapping ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view import mappings in their workspace"
+  ON import_account_mapping FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM accounts a
+      JOIN workspace_members wm ON wm.workspace_id = a.workspace_id
+      WHERE a.id = import_account_mapping.account_id
+      AND wm.user_id = auth.uid()
+    )
+  );
+```
+
+### 12. Critical Performance Indexes
+
+```sql
+-- Composite indexes for common query patterns (added to existing tables)
+
+-- For workspace-scoped account queries
+CREATE INDEX idx_accounts_workspace_created
+  ON accounts(workspace_id, created_at DESC);
+
+CREATE INDEX idx_accounts_workspace_owner
+  ON accounts(workspace_id, owner_id);
+
+-- For contact queries by account
+CREATE INDEX idx_contacts_workspace_account
+  ON contacts(workspace_id, account_id);
+
+-- For activity timeline queries
+CREATE INDEX idx_activities_workspace_type_date
+  ON activities(workspace_id, activity_type, created_at DESC);
+
+CREATE INDEX idx_activities_workspace_contact_date
+  ON activities(workspace_id, contact_id, created_at DESC);
+
+-- For custom field lookups
+CREATE INDEX idx_custom_field_values_field_entity
+  ON custom_field_values(custom_field_id, entity_id);
+```
+
 ---
 
 ## 🔌 API Endpoints

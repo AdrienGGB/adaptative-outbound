@@ -232,6 +232,96 @@ CREATE POLICY "Users can view logs for accessible jobs"
   );
 ```
 
+### Rate Limiting for Third-Party APIs
+
+```sql
+-- Track API rate limits to prevent exceeding quotas
+CREATE TABLE rate_limits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
+
+  -- Rate Limit Key
+  key VARCHAR(255) NOT NULL,
+  -- Format: "{service}:{workspace_id}" or "{service}:{workspace_id}:{user_id}"
+  -- Examples: "clearbit:abc123", "openai:abc123:user456", "salesforce:abc123"
+
+  -- Current Window
+  requests INT DEFAULT 0,
+  window_start TIMESTAMP DEFAULT NOW(),
+  window_duration INTERVAL DEFAULT '1 minute',
+
+  -- Limits
+  max_requests INT NOT NULL,
+  -- Clearbit: 600/min, OpenAI: 500/min, Gmail: 2000/day
+
+  -- Metadata
+  last_request_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+
+  UNIQUE(key)
+);
+
+CREATE INDEX idx_rate_limits_workspace ON rate_limits(workspace_id);
+CREATE INDEX idx_rate_limits_key ON rate_limits(key);
+CREATE INDEX idx_rate_limits_window ON rate_limits(window_start, window_duration);
+
+-- RLS
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view rate limits in their workspace"
+  ON rate_limits FOR SELECT
+  USING (
+    workspace_id IN (
+      SELECT workspace_id FROM workspace_members
+      WHERE user_id = auth.uid()
+    )
+  );
+
+-- Function to check and increment rate limit
+CREATE OR REPLACE FUNCTION check_rate_limit(
+  p_key VARCHAR(255),
+  p_max_requests INT,
+  p_window_duration INTERVAL DEFAULT '1 minute'
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+  v_current_requests INT;
+  v_window_start TIMESTAMP;
+BEGIN
+  -- Get current window
+  SELECT requests, window_start
+  INTO v_current_requests, v_window_start
+  FROM rate_limits
+  WHERE key = p_key
+  FOR UPDATE;
+
+  -- If no record or window expired, reset
+  IF NOT FOUND OR (NOW() - v_window_start) > p_window_duration THEN
+    INSERT INTO rate_limits (key, requests, window_start, max_requests, window_duration)
+    VALUES (p_key, 1, NOW(), p_max_requests, p_window_duration)
+    ON CONFLICT (key) DO UPDATE
+    SET requests = 1,
+        window_start = NOW(),
+        max_requests = p_max_requests,
+        last_request_at = NOW();
+    RETURN TRUE;
+  END IF;
+
+  -- Check if under limit
+  IF v_current_requests < p_max_requests THEN
+    UPDATE rate_limits
+    SET requests = requests + 1,
+        last_request_at = NOW()
+    WHERE key = p_key;
+    RETURN TRUE;
+  ELSE
+    -- Rate limit exceeded
+    RETURN FALSE;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+```
+
 ### Job Processing Flow
 
 ```
