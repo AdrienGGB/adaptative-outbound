@@ -37,7 +37,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes logic
-  const protectedPaths = ['/dashboard', '/settings', '/accounts', '/sequences', '/analytics']
+  const protectedPaths = ['/workspace', '/dashboard', '/settings', '/accounts', '/sequences', '/analytics']
   const authPaths = ['/login', '/signup', '/reset-password']
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
   const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path))
@@ -50,10 +50,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect to dashboard if accessing auth pages while logged in
+  // Redirect to workspace if accessing auth pages while logged in
   if (isAuthPath && user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/workspace'
     return NextResponse.redirect(url)
   }
 

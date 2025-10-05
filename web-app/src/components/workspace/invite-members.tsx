@@ -1,0 +1,180 @@
+'use client'
+
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createClientRaw } from '@/lib/supabase/client-raw'
+import { inviteMemberSchema, type InviteMemberFormData } from '@/lib/validations/auth'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { UserPlus, AlertCircle } from 'lucide-react'
+import { useAuth } from '@/lib/auth/auth-context'
+import { toast } from 'sonner'
+import { nanoid } from 'nanoid'
+
+type InviteMembersProps = {
+  onInviteSent?: () => void
+}
+
+export function InviteMembers({ onInviteSent }: InviteMembersProps) {
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const { workspace, user } = useAuth()
+  const supabase = createClientRaw()
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<InviteMemberFormData>({
+    resolver: zodResolver(inviteMemberSchema),
+    defaultValues: {
+      role: 'sdr',
+    },
+  })
+
+  const selectedRole = watch('role')
+
+  const onSubmit = async (data: InviteMemberFormData) => {
+    if (!workspace || !user) return
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Generate invitation token
+      const token = nanoid(32)
+
+      // Create invitation
+      const { error: inviteError } = await supabase
+        .from('workspace_invitations')
+        .insert({
+          workspace_id: workspace.id,
+          email: data.email,
+          role: data.role,
+          token,
+          invited_by: user.id,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        })
+
+      if (inviteError) throw inviteError
+
+      toast.success(`Invitation sent to ${data.email}`)
+      setOpen(false)
+      reset()
+      onInviteSent?.()
+    } catch (err) {
+      console.error('Error sending invitation:', err)
+      setError(err instanceof Error ? err.message : 'Failed to send invitation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite Member
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Invite Team Member</DialogTitle>
+          <DialogDescription>
+            Send an invitation to join your workspace
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="colleague@example.com"
+              {...register('email')}
+              disabled={loading}
+            />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="role">Role</Label>
+            <Select
+              value={selectedRole}
+              onValueChange={(value) =>
+                setValue('role', value as 'admin' | 'sales_manager' | 'sdr' | 'ae')
+              }
+              disabled={loading}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="sales_manager">Sales Manager</SelectItem>
+                <SelectItem value="sdr">SDR</SelectItem>
+                <SelectItem value="ae">AE</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.role && (
+              <p className="text-sm text-red-500">{errors.role.message}</p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {selectedRole === 'admin' && 'Full access to workspace settings and members'}
+              {selectedRole === 'sales_manager' && 'Manage sales team and sequences'}
+              {selectedRole === 'sdr' && 'Execute sequences and manage accounts'}
+              {selectedRole === 'ae' && 'Manage accounts and close deals'}
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Sending...' : 'Send Invitation'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
