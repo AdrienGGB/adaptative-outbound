@@ -38,12 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const fetchWorkspaceAndRole = async (userId: string, workspaceId?: string) => {
-    // Get user's workspaces
-    const { data: memberships } = await supabase
-      .from('workspace_members')
-      .select('workspace_id, role, workspaces(*)')
-      .eq('user_id', userId)
-      .eq('status', 'active')
+    // Use RPC function to bypass RLS circular dependency
+    const { data: memberships, error } = await supabase
+      .rpc('get_user_workspace_memberships', { p_user_id: userId })
+
+    if (error) {
+      console.error('Error fetching memberships:', error)
+      return { workspace: null, role: null }
+    }
 
     if (!memberships || memberships.length === 0) {
       return { workspace: null, role: null }
@@ -77,8 +79,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('currentWorkspaceId', selectedMembership.workspace_id)
     }
 
+    // Build workspace object from RPC result
+    const workspaceData: Workspace = {
+      id: selectedMembership.workspace_id,
+      name: selectedMembership.workspace_name,
+      slug: selectedMembership.workspace_slug,
+      plan: selectedMembership.workspace_plan,
+      seats_limit: selectedMembership.workspace_seats_limit,
+    }
+
     return {
-      workspace: selectedMembership.workspaces as unknown as Workspace,
+      workspace: workspaceData,
       role: selectedMembership.role as UserRole,
     }
   }

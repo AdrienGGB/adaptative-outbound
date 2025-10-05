@@ -28,15 +28,21 @@ export function WorkspaceSwitcher() {
     if (!user) return
 
     const fetchWorkspaces = async () => {
-      const { data } = await supabase
-        .from('workspace_members')
-        .select('workspace_id, role, workspaces(*)')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
+      // Use RPC function to bypass RLS circular dependency
+      const { data, error } = await supabase
+        .rpc('get_user_workspace_memberships', { p_user_id: user.id })
+
+      if (error) {
+        console.error('Error fetching workspaces:', error)
+      }
 
       if (data) {
         const workspacesWithRole: WorkspaceWithRole[] = data.map((item) => ({
-          ...(item.workspaces as any),
+          id: item.workspace_id,
+          name: item.workspace_name,
+          slug: item.workspace_slug,
+          plan: item.workspace_plan,
+          seats_limit: item.workspace_seats_limit,
           role: item.role,
         }))
         setWorkspaces(workspacesWithRole)
