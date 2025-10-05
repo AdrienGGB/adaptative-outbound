@@ -15,8 +15,7 @@ export default function CreateWorkspacePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: '',
-    description: ''
+    name: ''
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,48 +34,55 @@ export default function CreateWorkspacePage() {
       // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser()
 
+      console.log('Auth check:', { user: user?.id, userError })
+
       if (userError || !user) {
+        console.error('User auth error:', userError)
         toast.error('You must be logged in to create a workspace')
         router.push('/login')
         return
       }
 
-      // Create workspace
-      const { data: workspace, error: workspaceError } = await supabase
-        .from('workspaces')
-        .insert({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          created_by: user.id
+      // Generate slug from workspace name
+      const slug = formData.name.trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        + '-' + Date.now().toString(36)
+
+      console.log('Calling create_workspace_with_owner function:', {
+        name: formData.name.trim(),
+        slug,
+        owner_id: user.id
+      })
+
+      // Use the database function that handles both workspace creation and membership
+      // This function runs with SECURITY DEFINER, bypassing RLS restrictions
+      const { data: workspaceId, error: workspaceError } = await supabase
+        .rpc('create_workspace_with_owner', {
+          workspace_name: formData.name.trim(),
+          workspace_slug: slug,
+          owner_user_id: user.id
         })
-        .select()
-        .single()
 
       if (workspaceError) {
-        console.error('Error creating workspace:', workspaceError)
-        toast.error('Failed to create workspace')
-        return
-      }
-
-      // Add current user as Admin
-      const { error: memberError } = await supabase
-        .from('workspace_members')
-        .insert({
-          workspace_id: workspace.id,
-          user_id: user.id,
-          role: 'admin'
+        console.error('Full workspace error:', {
+          message: workspaceError.message,
+          details: workspaceError.details,
+          hint: workspaceError.hint,
+          code: workspaceError.code,
+          fullError: workspaceError
         })
-
-      if (memberError) {
-        console.error('Error adding member:', memberError)
-        toast.error('Workspace created but failed to add you as admin')
+        toast.error(`Failed to create workspace: ${workspaceError.message || 'Unknown error'}`)
         return
       }
+
+      console.log('Workspace created with ID:', workspaceId)
 
       toast.success('Workspace created successfully!')
 
       // Store new workspace in localStorage and redirect
-      localStorage.setItem('currentWorkspaceId', workspace.id)
+      localStorage.setItem('currentWorkspaceId', workspaceId)
       router.push('/workspace')
       router.refresh()
     } catch (error) {
@@ -120,20 +126,6 @@ export default function CreateWorkspacePage() {
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Input
-                id="description"
-                placeholder="e.g., Enterprise sales team workspace"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                disabled={loading}
-              />
-              <p className="text-sm text-muted-foreground">
-                Add a description to help identify this workspace
-              </p>
-            </div>
-
             <div className="flex gap-3">
               <Button type="submit" disabled={loading} className="flex-1">
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -155,7 +147,7 @@ export default function CreateWorkspacePage() {
       <div className="mt-6 p-4 bg-muted rounded-lg">
         <h3 className="font-semibold mb-2">What happens next?</h3>
         <ul className="text-sm text-muted-foreground space-y-1">
-          <li>• You'll be added as an Admin with full permissions</li>
+          <li>• You&apos;ll be added as an Admin with full permissions</li>
           <li>• You can invite team members and assign roles</li>
           <li>• All workspace data will be isolated and secure</li>
           <li>• You can switch between workspaces anytime</li>
