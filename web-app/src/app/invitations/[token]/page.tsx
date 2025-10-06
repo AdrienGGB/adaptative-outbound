@@ -61,7 +61,7 @@ export default function InvitationPage({ params }: { params: { token: string } }
           inviter:profiles!workspace_invitations_invited_by_fkey(full_name, email)
         `)
         .eq('token', params.token)
-        .single()
+        .single() as { data: InvitationData | null; error: any }
 
       if (inviteError || !invitation) {
         setState({
