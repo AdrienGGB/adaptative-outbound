@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchWorkspaceAndRole = async (userId: string, workspaceId?: string) => {
     // Use RPC function to bypass RLS circular dependency
     const { data: memberships, error } = await supabase
-      .rpc('get_user_workspace_memberships', { p_user_id: userId }) as any
+      .rpc('get_user_workspace_memberships', { p_user_id: userId } as any) as any
 
     if (error) {
       console.error('Error fetching memberships:', error)
