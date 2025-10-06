@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // If workspace ID provided, try to find it
     if (workspaceId) {
-      const found = memberships.find((m) => m.workspace_id === workspaceId)
+      const found = memberships.find((m: any) => m.workspace_id === workspaceId)
       if (found) {
         selectedMembership = found
       }
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           : null
 
       if (savedWorkspaceId) {
-        const found = memberships.find((m) => m.workspace_id === savedWorkspaceId)
+        const found = memberships.find((m: any) => m.workspace_id === savedWorkspaceId)
         if (found) {
           selectedMembership = found
         }
