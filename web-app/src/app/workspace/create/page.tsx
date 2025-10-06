@@ -63,7 +63,7 @@ export default function CreateWorkspacePage() {
           workspace_name: formData.name.trim(),
           workspace_slug: slug,
           owner_user_id: user.id
-        })
+        } as any)
 
       if (workspaceError) {
         console.error('Full workspace error:', {

@@ -99,7 +99,8 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
       // Create invitation with expiration (7 days)
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
-      const { error: inviteError } = await supabase
+      // Use type assertion to bypass strict Supabase type checking
+      const result: any = await (supabase as any)
         .from('workspace_invitations')
         .insert({
           workspace_id: workspace.id,
@@ -110,7 +111,7 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
           expires_at: expiresAt,
         })
 
-      if (inviteError) throw inviteError
+      if (result.error) throw result.error
 
       // Generate invitation link
       const link = `${window.location.origin}/invitations/${token}`

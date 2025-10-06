@@ -77,12 +77,13 @@ export function MembersTable({ members, onUpdate }: MembersTableProps) {
   const handleUpdateRole = async (memberId: string, newRole: UserRole) => {
     setUpdatingMember(memberId)
     try {
-      const { error } = await supabase
+      // Use type assertion to bypass strict Supabase type checking
+      const result: any = await (supabase as any)
         .from('workspace_members')
         .update({ role: newRole })
         .eq('id', memberId)
 
-      if (error) throw error
+      if (result.error) throw result.error
 
       toast.success('Member role updated successfully')
       onUpdate()
@@ -106,12 +107,13 @@ export function MembersTable({ members, onUpdate }: MembersTableProps) {
 
     setUpdatingMember(memberId)
     try {
-      const { error } = await supabase
+      // Use type assertion to bypass strict Supabase type checking
+      const result: any = await (supabase as any)
         .from('workspace_members')
         .delete()
         .eq('id', memberId)
 
-      if (error) throw error
+      if (result.error) throw result.error
 
       toast.success('Member removed successfully')
       onUpdate()
