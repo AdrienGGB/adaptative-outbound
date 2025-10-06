@@ -30,7 +30,7 @@ export function WorkspaceSwitcher() {
     const fetchWorkspaces = async () => {
       // Use RPC function to bypass RLS circular dependency
       const { data, error } = await supabase
-        .rpc('get_user_workspace_memberships', { p_user_id: user.id } as any)
+        .rpc('get_user_workspace_memberships', { p_user_id: user.id } as any) as any
 
       if (error) {
         console.error('Error fetching workspaces:', error)
