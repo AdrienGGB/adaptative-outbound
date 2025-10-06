@@ -80,13 +80,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Build workspace object from RPC result
-    const workspaceData: Workspace = {
+    const workspaceData = {
       id: selectedMembership.workspace_id,
       name: selectedMembership.workspace_name,
       slug: selectedMembership.workspace_slug,
       plan: selectedMembership.workspace_plan,
       seats_limit: selectedMembership.workspace_seats_limit,
-    }
+    } as Workspace
 
     return {
       workspace: workspaceData,
