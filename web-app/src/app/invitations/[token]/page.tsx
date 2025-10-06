@@ -99,12 +99,12 @@ export default function InvitationPage({ params }: { params: { token: string } }
         .eq('workspace_id', invitation.workspace_id)
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .single()
+        .single() as { data: { workspace_id: string; workspaces: { id: string; name: string } } | null; error: any }
 
       if (existingMember) {
         setState({
           type: 'already-member',
-          workspace: existingMember.workspaces as unknown as { id: string; name: string }
+          workspace: existingMember.workspaces
         })
         return
       }
