@@ -144,7 +144,7 @@ export default function InvitationPage({ params }: { params: { token: string } }
           user_id: user.id,
           role: invitation.role,
           status: 'active'
-        })
+        } as any)
 
       if (memberError) throw memberError
 
@@ -152,7 +152,7 @@ export default function InvitationPage({ params }: { params: { token: string } }
       const { error: deleteError } = await supabase
         .from('workspace_invitations')
         .delete()
-        .eq('id', invitation.id)
+        .eq('id', invitation.id) as any
 
       if (deleteError) throw deleteError
 
