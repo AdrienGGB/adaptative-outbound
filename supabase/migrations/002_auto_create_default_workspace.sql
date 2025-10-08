@@ -7,7 +7,10 @@
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.create_default_workspace_for_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   default_workspace_id UUID;
   workspace_slug TEXT;
@@ -23,7 +26,7 @@ BEGIN
 
   -- Create workspace using the helper function
   -- This function handles workspace creation, adding the user as admin, and audit logging
-  default_workspace_id := create_workspace_with_owner(
+  default_workspace_id := public.create_workspace_with_owner(
     workspace_name,
     workspace_slug,
     NEW.id
@@ -31,7 +34,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================================
 -- TRIGGER: Auto-create workspace on user signup
