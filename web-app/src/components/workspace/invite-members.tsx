@@ -31,11 +31,20 @@ import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 
 type InviteMembersProps = {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onInviteSent?: () => void
 }
 
-export function InviteMembers({ onInviteSent }: InviteMembersProps) {
-  const [open, setOpen] = useState(false)
+export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent }: InviteMembersProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+
+  // Determine if component is in controlled mode
+  const isControlled = onOpenChange !== undefined
+
+  // Use controlled state if provided, otherwise use internal state
+  const open = isControlled ? (controlledOpen ?? false) : internalOpen
+  const setOpen = isControlled ? onOpenChange! : setInternalOpen
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [invitationLink, setInvitationLink] = useState<string | null>(null)
@@ -66,16 +75,17 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
     setError(null)
 
     try {
-      // Check if email is already invited or is a member
+      // Check if email is already invited (pending status only)
       const { data: existingInvite } = await supabase
         .from('workspace_invitations')
-        .select('id')
+        .select('id, status')
         .eq('workspace_id', workspace.id)
         .eq('email', data.email)
-        .single()
+        .eq('status', 'pending')
+        .maybeSingle()
 
       if (existingInvite) {
-        setError('This email has already been invited.')
+        setError('This email has already been invited and is pending acceptance.')
         setLoading(false)
         return
       }
@@ -85,7 +95,7 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
         .select('id, profiles!inner(email)')
         .eq('workspace_id', workspace.id)
         .eq('profiles.email', data.email)
-        .single()
+        .maybeSingle()
 
       if (existingMember) {
         setError('This email is already a member of this workspace.')
@@ -99,8 +109,8 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
       // Create invitation with expiration (7 days)
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
-      // Use type assertion to bypass strict Supabase type checking
-      const result: any = await (supabase as any)
+      // Insert invitation
+      const { data: insertedInvitation, error: insertError } = await supabase
         .from('workspace_invitations')
         .insert({
           workspace_id: workspace.id,
@@ -110,8 +120,19 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
           invited_by: user.id,
           expires_at: expiresAt,
         })
+        .select()
+        .single()
 
-      if (result.error) throw result.error
+      if (insertError) {
+        console.error('Supabase insert error:', {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint,
+          fullError: insertError
+        })
+        throw new Error(insertError.message || 'Failed to create invitation')
+      }
 
       // Generate invitation link
       const link = `${window.location.origin}/invitations/${token}`
@@ -120,7 +141,12 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
       toast.success(`Invitation created for ${data.email}`)
       onInviteSent?.()
     } catch (err) {
-      console.error('Error sending invitation:', err)
+      console.error('Error sending invitation:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        details: err,
+        name: err instanceof Error ? err.name : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined
+      })
       setError(err instanceof Error ? err.message : 'Failed to send invitation')
     } finally {
       setLoading(false)
@@ -163,14 +189,25 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
     }
   }
 
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    console.log('Dialog open change:', newOpen, 'isControlled:', isControlled)
+    if (newOpen) {
+      setOpen(true)
+    } else {
+      handleClose()
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogTrigger asChild>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Invite Member
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite Member
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invite Team Member</DialogTitle>
