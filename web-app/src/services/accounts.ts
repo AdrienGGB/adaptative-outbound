@@ -31,11 +31,28 @@ export async function createAccount(data: AccountCreate): Promise<Account> {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error creating account:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return account as Account
-  } catch (error) {
-    console.error('Failed to create account:', error)
-    throw new Error('Failed to create account')
+  } catch (error: any) {
+    console.error('Failed to create account:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -54,13 +71,28 @@ export async function getAccount(id: string): Promise<Account | null> {
 
     if (error) {
       if (error.code === 'PGRST116') return null // Not found
+      console.error('Supabase error fetching account:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
       throw error
     }
 
     return account as Account
-  } catch (error) {
-    console.error('Failed to get account:', error)
-    throw new Error('Failed to get account')
+  } catch (error: any) {
+    console.error('Failed to get account:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -207,11 +239,28 @@ export async function getAccounts(filters?: AccountFilters): Promise<Account[]> 
 
     const { data: accounts, error } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error fetching accounts:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return (accounts || []) as Account[]
-  } catch (error) {
-    console.error('Failed to get accounts:', error)
-    throw new Error('Failed to get accounts')
+  } catch (error: any) {
+    console.error('Failed to get accounts:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -232,11 +281,28 @@ export async function updateAccount(
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error updating account:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return account as Account
-  } catch (error) {
-    console.error('Failed to update account:', error)
-    throw new Error('Failed to update account')
+  } catch (error: any) {
+    console.error('Failed to update account:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -252,10 +318,27 @@ export async function deleteAccount(id: string): Promise<void> {
       .update({ status: 'archived' })
       .eq('id', id)
 
-    if (error) throw error
-  } catch (error) {
-    console.error('Failed to delete account:', error)
-    throw new Error('Failed to delete account')
+    if (error) {
+      console.error('Supabase error deleting account:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
+  } catch (error: any) {
+    console.error('Failed to delete account:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -277,11 +360,28 @@ export async function getAccountContacts(accountId: string): Promise<Contact[]> 
       .eq('status', 'active')
       .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error fetching account contacts:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return (contacts || []) as Contact[]
-  } catch (error) {
-    console.error('Failed to get account contacts:', error)
-    throw new Error('Failed to get account contacts')
+  } catch (error: any) {
+    console.error('Failed to get account contacts:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -296,13 +396,30 @@ export async function getAccountActivities(accountId: string): Promise<Activity[
       .from('activities')
       .select('*')
       .eq('account_id', accountId)
-      .order('activity_at', { ascending: false })
+      .order('occurred_at', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error fetching account activities:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return (activities || []) as Activity[]
-  } catch (error) {
-    console.error('Failed to get account activities:', error)
-    throw new Error('Failed to get account activities')
+  } catch (error: any) {
+    console.error('Failed to get account activities:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -321,11 +438,28 @@ export async function getAccountHierarchy(
       .select('*')
       .or(`parent_account_id.eq.${accountId},child_account_id.eq.${accountId}`)
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error fetching account hierarchy:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return (hierarchies || []) as AccountHierarchy[]
-  } catch (error) {
-    console.error('Failed to get account hierarchy:', error)
-    throw new Error('Failed to get account hierarchy')
+  } catch (error: any) {
+    console.error('Failed to get account hierarchy:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -350,11 +484,28 @@ export async function searchAccounts(
       .or(`name.ilike.%${query}%,domain.ilike.%${query}%`)
       .limit(50)
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error searching accounts:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return (accounts || []) as Account[]
-  } catch (error) {
-    console.error('Failed to search accounts:', error)
-    throw new Error('Failed to search accounts')
+  } catch (error: any) {
+    console.error('Failed to search accounts:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -376,11 +527,28 @@ export async function bulkCreateAccounts(
       .insert(accounts)
       .select()
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error bulk creating accounts:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        full: error
+      })
+      throw error
+    }
     return (data || []) as Account[]
-  } catch (error) {
-    console.error('Failed to bulk create accounts:', error)
-    throw new Error('Failed to bulk create accounts')
+  } catch (error: any) {
+    console.error('Failed to bulk create accounts:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }
 
@@ -401,8 +569,16 @@ export async function bulkUpdateAccounts(
     }
 
     return updatedAccounts
-  } catch (error) {
-    console.error('Failed to bulk update accounts:', error)
-    throw new Error('Failed to bulk update accounts')
+  } catch (error: any) {
+    console.error('Failed to bulk update accounts:', {
+      message: error?.message,
+      name: error?.name,
+      code: error?.code,
+      details: error?.details,
+      hint: error?.hint,
+      stack: error?.stack,
+      full: error
+    })
+    throw error
   }
 }

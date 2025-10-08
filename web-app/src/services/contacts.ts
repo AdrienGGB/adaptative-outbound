@@ -289,7 +289,7 @@ export async function getContactActivities(contactId: string): Promise<Activity[
       .from('activities')
       .select('*')
       .eq('contact_id', contactId)
-      .order('activity_at', { ascending: false })
+      .order('occurred_at', { ascending: false })
 
     if (error) throw error
     return (activities || []) as Activity[]

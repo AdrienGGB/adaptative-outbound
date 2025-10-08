@@ -106,11 +106,11 @@ export async function getActivities(filters?: ActivityFilters): Promise<Activity
       }
 
       // Activity category filter
-      if (filters.category) {
-        if (Array.isArray(filters.category)) {
-          query = query.in('category', filters.category)
+      if (filters.activity_category) {
+        if (Array.isArray(filters.activity_category)) {
+          query = query.in('activity_category', filters.activity_category)
         } else {
-          query = query.eq('category', filters.category)
+          query = query.eq('activity_category', filters.activity_category)
         }
       }
 
@@ -132,21 +132,21 @@ export async function getActivities(filters?: ActivityFilters): Promise<Activity
         }
       }
 
-      // Created by filter
-      if (filters.created_by) {
-        if (Array.isArray(filters.created_by)) {
-          query = query.in('created_by', filters.created_by)
+      // User filter
+      if (filters.user_id) {
+        if (Array.isArray(filters.user_id)) {
+          query = query.in('user_id', filters.user_id)
         } else {
-          query = query.eq('created_by', filters.created_by)
+          query = query.eq('user_id', filters.user_id)
         }
       }
 
       // Date filters
-      if (filters.activity_after) {
-        query = query.gte('activity_at', filters.activity_after)
+      if (filters.occurred_after) {
+        query = query.gte('occurred_at', filters.occurred_after)
       }
-      if (filters.activity_before) {
-        query = query.lte('activity_at', filters.activity_before)
+      if (filters.occurred_before) {
+        query = query.lte('occurred_at', filters.occurred_before)
       }
       if (filters.created_after) {
         query = query.gte('created_at', filters.created_after)
@@ -169,11 +169,11 @@ export async function getActivities(filters?: ActivityFilters): Promise<Activity
         query = query.order(filters.order_by, { ascending: direction === 'asc' })
       } else {
         // Default: most recent first
-        query = query.order('activity_at', { ascending: false })
+        query = query.order('occurred_at', { ascending: false })
       }
     } else {
       // Default ordering if no filters
-      query = query.order('activity_at', { ascending: false })
+      query = query.order('occurred_at', { ascending: false })
     }
 
     const { data: activities, error } = await query
@@ -226,7 +226,7 @@ export async function getAccountTimeline(accountId: string): Promise<Activity[]>
       .from('activities')
       .select('*')
       .eq('account_id', accountId)
-      .order('activity_at', { ascending: false })
+      .order('occurred_at', { ascending: false })
       .limit(100)
 
     if (error) throw error
@@ -248,7 +248,7 @@ export async function getContactTimeline(contactId: string): Promise<Activity[]>
       .from('activities')
       .select('*')
       .eq('contact_id', contactId)
-      .order('activity_at', { ascending: false })
+      .order('occurred_at', { ascending: false })
       .limit(100)
 
     if (error) throw error
@@ -273,7 +273,7 @@ export async function getWorkspaceTimeline(
       .from('activities')
       .select('*')
       .eq('workspace_id', workspaceId)
-      .order('activity_at', { ascending: false })
+      .order('occurred_at', { ascending: false })
       .limit(limit)
 
     if (error) throw error
@@ -308,7 +308,7 @@ export interface EmailActivityCreate {
     url?: string
   }>
   template_id?: string
-  activity_at?: string
+  occurred_at?: string
 }
 
 /**
@@ -319,10 +319,14 @@ export async function logEmail(data: EmailActivityCreate): Promise<Activity> {
     workspace_id: data.workspace_id,
     account_id: data.account_id || null,
     contact_id: data.contact_id || null,
+    user_id: null,
     activity_type: 'email_sent',
-    category: 'email',
-    activity_at: data.activity_at || new Date().toISOString(),
-    data: {
+    activity_category: 'email',
+    subject: data.subject || null,
+    description: data.preview_text || null,
+    body: null,
+    occurred_at: data.occurred_at || new Date().toISOString(),
+    activity_data: {
       to: data.to,
       from: data.from,
       subject: data.subject,
@@ -332,7 +336,13 @@ export async function logEmail(data: EmailActivityCreate): Promise<Activity> {
       attachments: data.attachments,
       template_id: data.template_id,
     } as EmailActivityData,
+    outcome: null,
+    sentiment_score: null,
+    duration_seconds: null,
+    scheduled_for: null,
     source: 'manual',
+    source_id: null,
+    external_id: null,
   }
 
   return logActivity(activityData)
@@ -353,7 +363,7 @@ export interface CallActivityCreate {
   transcript_text?: string
   sentiment?: 'positive' | 'neutral' | 'negative'
   next_steps?: string[]
-  activity_at?: string
+  occurred_at?: string
 }
 
 /**
@@ -364,11 +374,15 @@ export async function logCall(data: CallActivityCreate): Promise<Activity> {
     workspace_id: data.workspace_id,
     account_id: data.account_id || null,
     contact_id: data.contact_id || null,
+    user_id: null,
     activity_type: 'call_completed',
-    category: 'call',
+    activity_category: 'call',
+    subject: null,
+    description: null,
+    body: null,
     outcome: data.outcome,
-    activity_at: data.activity_at || new Date().toISOString(),
-    data: {
+    occurred_at: data.occurred_at || new Date().toISOString(),
+    activity_data: {
       phone_number: data.phone_number,
       direction: data.direction,
       duration_seconds: data.duration_seconds,
@@ -378,7 +392,12 @@ export async function logCall(data: CallActivityCreate): Promise<Activity> {
       sentiment: data.sentiment,
       next_steps: data.next_steps,
     } as CallActivityData,
+    sentiment_score: null,
+    duration_seconds: data.duration_seconds,
+    scheduled_for: null,
     source: 'manual',
+    source_id: null,
+    external_id: null,
   }
 
   return logActivity(activityData)
@@ -402,7 +421,7 @@ export interface MeetingActivityCreate {
   recording_url?: string
   notes?: string
   next_steps?: string[]
-  activity_at?: string
+  occurred_at?: string
 }
 
 /**
@@ -413,10 +432,15 @@ export async function logMeeting(data: MeetingActivityCreate): Promise<Activity>
     workspace_id: data.workspace_id,
     account_id: data.account_id || null,
     contact_id: data.contact_id || null,
+    user_id: null,
     activity_type: 'meeting_held',
-    category: 'meeting',
-    activity_at: data.activity_at || new Date().toISOString(),
-    data: {
+    activity_category: 'meeting',
+    subject: data.meeting_title,
+    description: data.notes || null,
+    body: null,
+    outcome: null,
+    occurred_at: data.occurred_at || new Date().toISOString(),
+    activity_data: {
       meeting_title: data.meeting_title,
       duration_minutes: data.duration_minutes,
       attendees: data.attendees,
@@ -425,7 +449,12 @@ export async function logMeeting(data: MeetingActivityCreate): Promise<Activity>
       notes: data.notes,
       next_steps: data.next_steps,
     } as MeetingActivityData,
+    sentiment_score: null,
+    duration_seconds: data.duration_minutes * 60,
+    scheduled_for: null,
     source: 'manual',
+    source_id: null,
+    external_id: null,
   }
 
   return logActivity(activityData)
