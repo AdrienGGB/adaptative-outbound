@@ -34,6 +34,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { AccountForm } from "@/components/accounts/account-form"
+import { CreateContactDialog } from "@/components/contacts/create-contact-dialog"
+import { LogActivityDialog } from "@/components/activities/log-activity-dialog"
 
 export default function AccountDetailPage() {
   const params = useParams()
@@ -44,6 +46,8 @@ export default function AccountDetailPage() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [createContactDialogOpen, setCreateContactDialogOpen] = useState(false)
+  const [logActivityDialogOpen, setLogActivityDialogOpen] = useState(false)
 
   const accountId = params.id as string
 
@@ -82,6 +86,30 @@ export default function AccountDetailPage() {
     setEditDialogOpen(false)
     // Refresh account data
     if (accountId) {
+      const accountData = await getAccount(accountId)
+      setAccount(accountData)
+    }
+  }
+
+  const handleContactCreated = async () => {
+    setCreateContactDialogOpen(false)
+    // Refresh contacts
+    if (accountId) {
+      const contactsData = await getAccountContacts(accountId)
+      setContacts(contactsData)
+      // Also refresh account to update contact_count
+      const accountData = await getAccount(accountId)
+      setAccount(accountData)
+    }
+  }
+
+  const handleActivityLogged = async () => {
+    setLogActivityDialogOpen(false)
+    // Refresh activities
+    if (accountId) {
+      const activitiesData = await getAccountActivities(accountId)
+      setActivities(activitiesData)
+      // Also refresh account to update activity_count and last_activity_at
       const accountData = await getAccount(accountId)
       setAccount(accountData)
     }
@@ -410,7 +438,9 @@ export default function AccountDetailPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Contacts</CardTitle>
-                  <Button>Add Contact</Button>
+                  <Button onClick={() => setCreateContactDialogOpen(true)}>
+                    Add Contact
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -424,7 +454,9 @@ export default function AccountDetailPage() {
                       Add contacts to start building relationships with this
                       account.
                     </p>
-                    <Button>Add First Contact</Button>
+                    <Button onClick={() => setCreateContactDialogOpen(true)}>
+                      Add First Contact
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -482,7 +514,9 @@ export default function AccountDetailPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Activity Timeline</CardTitle>
-                  <Button>Log Activity</Button>
+                  <Button onClick={() => setLogActivityDialogOpen(true)}>
+                    Log Activity
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -496,7 +530,9 @@ export default function AccountDetailPage() {
                       Start logging activities to track engagement with this
                       account.
                     </p>
-                    <Button>Log First Activity</Button>
+                    <Button onClick={() => setLogActivityDialogOpen(true)}>
+                      Log First Activity
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -550,6 +586,24 @@ export default function AccountDetailPage() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Create Contact Dialog */}
+      <CreateContactDialog
+        open={createContactDialogOpen}
+        onOpenChange={setCreateContactDialogOpen}
+        workspaceId={workspace.id}
+        accountId={accountId}
+        onSuccess={handleContactCreated}
+      />
+
+      {/* Log Activity Dialog */}
+      <LogActivityDialog
+        open={logActivityDialogOpen}
+        onOpenChange={setLogActivityDialogOpen}
+        workspaceId={workspace.id}
+        accountId={accountId}
+        onSuccess={handleActivityLogged}
+      />
     </div>
   )
 }

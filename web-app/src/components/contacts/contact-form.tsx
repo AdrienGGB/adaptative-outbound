@@ -77,6 +77,7 @@ type ContactFormValues = z.infer<typeof contactSchema>
 interface ContactFormProps {
   workspaceId: string
   contact?: Contact
+  accountId?: string
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -84,6 +85,7 @@ interface ContactFormProps {
 export function ContactForm({
   workspaceId,
   contact,
+  accountId,
   onSuccess,
   onCancel,
 }: ContactFormProps) {
@@ -120,7 +122,7 @@ export function ContactForm({
       job_title: contact?.job_title || "",
       department: contact?.department || undefined,
       seniority_level: contact?.seniority_level || undefined,
-      account_id: contact?.account_id || "",
+      account_id: contact?.account_id || accountId || "",
       is_decision_maker: contact?.is_decision_maker ?? false,
       is_champion: contact?.is_champion ?? false,
       status: contact?.status || "active",
@@ -429,7 +431,6 @@ export function ContactForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
                         {account.name}

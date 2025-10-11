@@ -109,7 +109,42 @@ export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent
       // Create invitation with expiration (7 days)
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
+      // DETAILED LOGGING: Log what we're about to insert
+      console.log('=== INSERTION DEBUG INFO ===')
+      console.log('User ID:', user.id)
+      console.log('Workspace ID:', workspace.id)
+      console.log('User role in workspace:', workspace.role)
+      console.log('Attempting to insert:', {
+        workspace_id: workspace.id,
+        email: data.email,
+        role: data.role,
+        token: token.substring(0, 8) + '...',
+        invited_by: user.id,
+        expires_at: expiresAt,
+      })
+
+      // Test the RLS function first
+      console.log('\n=== TESTING RLS FUNCTION ===')
+      const { data: membershipData, error: membershipError } = await supabase
+        .rpc('get_user_workspace_memberships', { p_user_id: user.id })
+
+      if (membershipError) {
+        console.error('RLS function error:', {
+          code: membershipError.code,
+          message: membershipError.message,
+          details: membershipError.details,
+          hint: membershipError.hint,
+        })
+      } else {
+        console.log('RLS function result:', membershipData)
+        const isAdmin = membershipData?.some(
+          (m: any) => m.workspace_id === workspace.id && m.role === 'admin'
+        )
+        console.log('Is user admin?', isAdmin)
+      }
+
       // Insert invitation
+      console.log('\n=== ATTEMPTING INSERT ===')
       const { data: insertedInvitation, error: insertError } = await supabase
         .from('workspace_invitations')
         .insert({
@@ -124,15 +159,33 @@ export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent
         .single()
 
       if (insertError) {
-        console.error('Supabase insert error:', {
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint,
-          fullError: insertError
-        })
+        console.error('=== SUPABASE INSERT ERROR (DETAILED) ===')
+        console.error('Error object type:', Object.prototype.toString.call(insertError))
+        console.error('Error constructor:', insertError.constructor?.name)
+        console.error('\nDirect properties:')
+        console.error('  - code:', insertError.code)
+        console.error('  - message:', insertError.message)
+        console.error('  - details:', insertError.details)
+        console.error('  - hint:', insertError.hint)
+        console.error('\nAll enumerable keys:', Object.keys(insertError))
+        console.error('\nAll own properties:', Object.getOwnPropertyNames(insertError))
+        console.error('\nJSON.stringify:', JSON.stringify(insertError, null, 2))
+        console.error('\nError toString():', insertError.toString())
+        console.error('\nRaw error object:', insertError)
+        console.error('\nError stack:', insertError.stack)
+
+        // Try to extract any nested error info
+        if (typeof insertError === 'object' && insertError !== null) {
+          for (const [key, value] of Object.entries(insertError)) {
+            console.error(`  Property "${key}":`, typeof value, value)
+          }
+        }
+
         throw new Error(insertError.message || 'Failed to create invitation')
       }
+
+      console.log('=== INSERT SUCCESS ===')
+      console.log('Inserted invitation:', insertedInvitation)
 
       // Generate invitation link
       const link = `${window.location.origin}/invitations/${token}`
@@ -141,12 +194,14 @@ export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent
       toast.success(`Invitation created for ${data.email}`)
       onInviteSent?.()
     } catch (err) {
-      console.error('Error sending invitation:', {
-        message: err instanceof Error ? err.message : 'Unknown error',
-        details: err,
-        name: err instanceof Error ? err.name : 'Unknown',
-        stack: err instanceof Error ? err.stack : undefined
-      })
+      console.error('=== CATCH BLOCK ERROR ===')
+      console.error('Error type:', Object.prototype.toString.call(err))
+      console.error('Error constructor:', err instanceof Error ? err.constructor.name : 'Not an Error')
+      console.error('Error message:', err instanceof Error ? err.message : String(err))
+      console.error('Error name:', err instanceof Error ? err.name : 'N/A')
+      console.error('Error stack:', err instanceof Error ? err.stack : 'N/A')
+      console.error('Raw error:', err)
+
       setError(err instanceof Error ? err.message : 'Failed to send invitation')
     } finally {
       setLoading(false)

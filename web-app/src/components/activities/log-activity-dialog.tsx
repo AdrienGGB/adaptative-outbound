@@ -11,7 +11,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Form,
@@ -35,7 +34,6 @@ import { logActivity } from "@/services"
 import { getAccounts, getContacts } from "@/services"
 import type { ActivityCreate, ActivityType, ActivityOutcome, Account, Contact } from "@/types"
 import { toast } from "sonner"
-import { PlusCircle } from "lucide-react"
 
 const activitySchema = z.object({
   activity_type: z.enum([
@@ -64,6 +62,8 @@ const activitySchema = z.object({
 type ActivityFormValues = z.infer<typeof activitySchema>
 
 interface LogActivityDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   workspaceId: string
   accountId?: string
   contactId?: string
@@ -71,12 +71,13 @@ interface LogActivityDialogProps {
 }
 
 export function LogActivityDialog({
+  open,
+  onOpenChange,
   workspaceId,
   accountId,
   contactId,
   onSuccess,
 }: LogActivityDialogProps) {
-  const [open, setOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -145,7 +146,7 @@ export function LogActivityDialog({
       await logActivity(activityData)
       toast.success("Activity logged successfully")
       form.reset()
-      setOpen(false)
+      onOpenChange(false)
 
       if (onSuccess) {
         onSuccess()
@@ -159,13 +160,7 @@ export function LogActivityDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Log Activity
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
         <DialogHeader>
           <DialogTitle>Log Activity</DialogTitle>
@@ -317,7 +312,6 @@ export function LogActivityDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       {accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
                           {account.name}
@@ -357,7 +351,6 @@ export function LogActivityDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       {contacts.map((contact) => (
                         <SelectItem key={contact.id} value={contact.id}>
                           {contact.full_name}
