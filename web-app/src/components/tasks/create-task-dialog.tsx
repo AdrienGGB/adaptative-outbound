@@ -84,7 +84,9 @@ export function CreateTaskDialog({
     defaultValues: {
       task_type: "call",
       description: "",
+      due_date: "",
       priority: "medium",
+      assigned_to: "",
       contact_id: defaultContactId || "",
       account_id: defaultAccountId || "",
     },

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,16 @@ export function CreateContactDialog({
   accountId,
   onSuccess,
 }: CreateContactDialogProps) {
+  // Use a key to force remount and reset form when dialog opens
+  const [formKey, setFormKey] = useState(0)
+
+  // Reset form when dialog opens
+  useEffect(() => {
+    if (open) {
+      setFormKey(prev => prev + 1)
+    }
+  }, [open])
+
   const handleSuccess = () => {
     onOpenChange(false)
     onSuccess?.()
@@ -39,6 +50,7 @@ export function CreateContactDialog({
           </DialogDescription>
         </DialogHeader>
         <ContactForm
+          key={formKey}
           workspaceId={workspaceId}
           accountId={accountId}
           onSuccess={handleSuccess}

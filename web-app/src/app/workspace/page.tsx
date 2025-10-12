@@ -161,6 +161,15 @@ export default function WorkspacePage() {
               <Button variant="outline" className="w-full" onClick={() => router.push('/accounts')}>
                 View Accounts
               </Button>
+              <Button variant="outline" className="w-full" onClick={() => router.push('/contacts')}>
+                View Contacts
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => router.push('/activities')}>
+                View Activities
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => router.push('/tasks')}>
+                View Tasks
+              </Button>
               <Button variant="outline" className="w-full" onClick={() => router.push('/sequences')}>
                 View Sequences
               </Button>

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActivityTimeline } from "@/components/activities/activity-timeline"
 import { LogActivityDialog } from "@/components/activities/log-activity-dialog"
+import { EditContactDialog } from "@/components/contacts/edit-contact-dialog"
 import {
   ArrowLeft,
   Mail,
@@ -25,7 +26,6 @@ import {
   MapPin,
   Crown,
   Award,
-  Edit,
   BarChart3,
 } from "lucide-react"
 import Link from "next/link"
@@ -92,6 +92,18 @@ export default function ContactDetailPage() {
     }
   }
 
+  const refreshContact = async () => {
+    try {
+      const contactData = await getContact(contactId)
+      if (contactData) {
+        setContact(contactData)
+      }
+      await refreshActivities()
+    } catch (error) {
+      console.error("Failed to refresh contact:", error)
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -128,10 +140,11 @@ export default function ContactDetailPage() {
                 contactId={contact.id}
                 onSuccess={refreshActivities}
               />
-              <Button variant="outline">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
+              <EditContactDialog
+                workspaceId={workspace.id}
+                contact={contact}
+                onSuccess={refreshContact}
+              />
             </div>
           </div>
         </div>
