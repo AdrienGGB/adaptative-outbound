@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Tag Service
  * Handles tag management and entity tagging

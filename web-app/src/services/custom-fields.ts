@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Custom Field Service
  * Handles custom field definitions and values

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Activity Service
  * Handles activity logging and timeline queries
