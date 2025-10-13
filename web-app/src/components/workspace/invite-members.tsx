@@ -113,7 +113,6 @@ export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent
       console.log('=== INSERTION DEBUG INFO ===')
       console.log('User ID:', user.id)
       console.log('Workspace ID:', workspace.id)
-      console.log('User role in workspace:', workspace.role)
       console.log('Attempting to insert:', {
         workspace_id: workspace.id,
         email: data.email,
@@ -124,24 +123,25 @@ export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent
       })
 
       // Test the RLS function first
-      console.log('\n=== TESTING RLS FUNCTION ===')
-      const { data: membershipData, error: membershipError } = await supabase
-        .rpc('get_user_workspace_memberships', { p_user_id: user.id })
+      // Commented out debug code to fix build
+      // console.log('\n=== TESTING RLS FUNCTION ===')
+      // const { data: membershipData, error: membershipError } = await supabase
+      //   .rpc('get_user_workspace_memberships', { p_user_id: user.id })
 
-      if (membershipError) {
-        console.error('RLS function error:', {
-          code: membershipError.code,
-          message: membershipError.message,
-          details: membershipError.details,
-          hint: membershipError.hint,
-        })
-      } else {
-        console.log('RLS function result:', membershipData)
-        const isAdmin = membershipData?.some(
-          (m: any) => m.workspace_id === workspace.id && m.role === 'admin'
-        )
-        console.log('Is user admin?', isAdmin)
-      }
+      // if (membershipError) {
+      //   console.error('RLS function error:', {
+      //     code: membershipError.code,
+      //     message: membershipError.message,
+      //     details: membershipError.details,
+      //     hint: membershipError.hint,
+      //   })
+      // } else {
+      //   console.log('RLS function result:', membershipData)
+      //   const isAdmin = membershipData?.some(
+      //     (m: any) => m.workspace_id === workspace.id && m.role === 'admin'
+      //   )
+      //   console.log('Is user admin?', isAdmin)
+      // }
 
       // Insert invitation
       console.log('\n=== ATTEMPTING INSERT ===')
@@ -154,7 +154,7 @@ export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent
           token,
           invited_by: user.id,
           expires_at: expiresAt,
-        })
+        } as any)
         .select()
         .single()
 

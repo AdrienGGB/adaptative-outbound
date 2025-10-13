@@ -371,7 +371,7 @@ export function LogActivityDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => onOpenChange(false)}
               >
                 Cancel
               </Button>

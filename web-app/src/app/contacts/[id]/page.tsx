@@ -38,6 +38,7 @@ export default function ContactDetailPage() {
   const [account, setAccount] = useState<Account | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [logActivityOpen, setLogActivityOpen] = useState(false)
 
   const contactId = params.id as string
 
@@ -135,7 +136,12 @@ export default function ContactDetailPage() {
               </Button>
             </div>
             <div className="flex gap-2">
+              <Button onClick={() => setLogActivityOpen(true)}>
+                Log Activity
+              </Button>
               <LogActivityDialog
+                open={logActivityOpen}
+                onOpenChange={setLogActivityOpen}
                 workspaceId={workspace.id}
                 contactId={contact.id}
                 onSuccess={refreshActivities}

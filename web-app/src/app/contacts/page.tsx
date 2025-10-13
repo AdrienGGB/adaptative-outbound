@@ -28,6 +28,7 @@ export default function ContactsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [departmentFilter, setDepartmentFilter] = useState<string>("all")
   const [seniorityFilter, setSeniorityFilter] = useState<string>("all")
+  const [createContactOpen, setCreateContactOpen] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -116,7 +117,14 @@ export default function ContactsPage() {
                 </p>
               </div>
             </div>
-            <CreateContactDialog workspaceId={workspace.id} />
+            <Button onClick={() => setCreateContactOpen(true)}>
+              New Contact
+            </Button>
+            <CreateContactDialog
+              open={createContactOpen}
+              onOpenChange={setCreateContactOpen}
+              workspaceId={workspace.id}
+            />
           </div>
         </div>
       </header>
