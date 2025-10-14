@@ -159,9 +159,9 @@ export function MembersTable({ members, onUpdate }: MembersTableProps) {
             <TableCell className="font-medium">
               {member.profile?.first_name && member.profile?.last_name
                 ? `${member.profile.first_name} ${member.profile.last_name}`
-                : 'N/A'}
+                : member.profile?.email || 'N/A'}
             </TableCell>
-            <TableCell>{member.user_id}</TableCell>
+            <TableCell>{member.profile?.email || member.user_id}</TableCell>
             <TableCell>
               {isAdmin && member.user_id !== user?.id ? (
                 <Select

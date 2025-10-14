@@ -1,3 +1,4 @@
+Using workdir /Users/adriengaignebet/Documents/Tech/Adaptive Outbound
 export type Json =
   | string
   | number
@@ -7,296 +8,356 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          id: string
-          first_name: string | null
-          last_name: string | null
-          avatar_url: string | null
-          timezone: string
-          status: 'active' | 'suspended' | 'deleted'
-          created_at: string
-          updated_at: string
-          last_login_at: string | null
-        }
-        Insert: {
-          id: string
-          first_name?: string | null
-          last_name?: string | null
-          avatar_url?: string | null
-          timezone?: string
-          status?: 'active' | 'suspended' | 'deleted'
-          created_at?: string
-          updated_at?: string
-          last_login_at?: string | null
-        }
-        Update: {
-          id?: string
-          first_name?: string | null
-          last_name?: string | null
-          avatar_url?: string | null
-          timezone?: string
-          status?: 'active' | 'suspended' | 'deleted'
-          created_at?: string
-          updated_at?: string
-          last_login_at?: string | null
-        }
-      }
-      workspaces: {
-        Row: {
-          id: string
-          name: string
-          slug: string
-          owner_id: string | null
-          settings: Json
-          plan: 'free' | 'pro' | 'enterprise'
-          seats_limit: number
-          status: 'active' | 'suspended' | 'deleted'
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          slug: string
-          owner_id?: string | null
-          settings?: Json
-          plan?: 'free' | 'pro' | 'enterprise'
-          seats_limit?: number
-          status?: 'active' | 'suspended' | 'deleted'
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          slug?: string
-          owner_id?: string | null
-          settings?: Json
-          plan?: 'free' | 'pro' | 'enterprise'
-          seats_limit?: number
-          status?: 'active' | 'suspended' | 'deleted'
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      workspace_members: {
-        Row: {
-          id: string
-          workspace_id: string
-          user_id: string
-          role: 'admin' | 'sales_manager' | 'sdr' | 'ae'
-          status: 'invited' | 'active' | 'suspended'
-          invited_by: string | null
-          invited_at: string | null
-          joined_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          workspace_id: string
-          user_id: string
-          role: 'admin' | 'sales_manager' | 'sdr' | 'ae'
-          status?: 'invited' | 'active' | 'suspended'
-          invited_by?: string | null
-          invited_at?: string | null
-          joined_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          workspace_id?: string
-          user_id?: string
-          role?: 'admin' | 'sales_manager' | 'sdr' | 'ae'
-          status?: 'invited' | 'active' | 'suspended'
-          invited_by?: string | null
-          invited_at?: string | null
-          joined_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      workspace_invitations: {
-        Row: {
-          id: string
-          workspace_id: string
-          email: string
-          role: 'admin' | 'sales_manager' | 'sdr' | 'ae'
-          token: string
-          status: 'pending' | 'accepted' | 'expired' | 'revoked'
-          invited_by: string
-          accepted_by: string | null
-          created_at: string
-          expires_at: string
-          accepted_at: string | null
-        }
-        Insert: {
-          id?: string
-          workspace_id: string
-          email: string
-          role: 'admin' | 'sales_manager' | 'sdr' | 'ae'
-          token: string
-          status?: 'pending' | 'accepted' | 'expired' | 'revoked'
-          invited_by: string
-          accepted_by?: string | null
-          created_at?: string
-          expires_at?: string
-          accepted_at?: string | null
-        }
-        Update: {
-          id?: string
-          workspace_id?: string
-          email?: string
-          role?: 'admin' | 'sales_manager' | 'sdr' | 'ae'
-          token?: string
-          status?: 'pending' | 'accepted' | 'expired' | 'revoked'
-          invited_by?: string
-          accepted_by?: string | null
-          created_at?: string
-          expires_at?: string
-          accepted_at?: string | null
-        }
-      }
-      user_sessions: {
-        Row: {
-          id: string
-          user_id: string
-          workspace_id: string | null
-          device_name: string | null
-          ip_address: string | null
-          user_agent: string | null
-          refresh_token_id: string | null
-          last_used_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          workspace_id?: string | null
-          device_name?: string | null
-          ip_address?: string | null
-          user_agent?: string | null
-          refresh_token_id?: string | null
-          last_used_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          workspace_id?: string | null
-          device_name?: string | null
-          ip_address?: string | null
-          user_agent?: string | null
-          refresh_token_id?: string | null
-          last_used_at?: string
-          created_at?: string
-        }
-      }
       api_keys: {
         Row: {
-          id: string
-          workspace_id: string
-          user_id: string
-          name: string
-          key_prefix: string
-          key_hash: string
-          scopes: string[]
-          status: 'active' | 'revoked'
-          last_used_at: string | null
+          created_at: string | null
           expires_at: string | null
-          created_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
           revoked_at: string | null
+          scopes: string[] | null
+          status: string | null
+          user_id: string
+          workspace_id: string
         }
         Insert: {
-          id?: string
-          workspace_id: string
-          user_id: string
-          name: string
-          key_prefix: string
-          key_hash: string
-          scopes?: string[]
-          status?: 'active' | 'revoked'
-          last_used_at?: string | null
+          created_at?: string | null
           expires_at?: string | null
-          created_at?: string
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
           revoked_at?: string | null
+          scopes?: string[] | null
+          status?: string | null
+          user_id: string
+          workspace_id: string
         }
         Update: {
-          id?: string
-          workspace_id?: string
-          user_id?: string
-          name?: string
-          key_prefix?: string
-          key_hash?: string
-          scopes?: string[]
-          status?: 'active' | 'revoked'
-          last_used_at?: string | null
+          created_at?: string | null
           expires_at?: string | null
-          created_at?: string
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
           revoked_at?: string | null
+          scopes?: string[] | null
+          status?: string | null
+          user_id?: string
+          workspace_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
-          id: string
-          workspace_id: string | null
-          user_id: string | null
-          event_type: string
+          created_at: string | null
           event_data: Json | null
-          ip_address: string | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
           user_agent: string | null
-          created_at: string
+          user_id: string | null
+          workspace_id: string | null
         }
         Insert: {
-          id?: string
-          workspace_id?: string | null
-          user_id?: string | null
-          event_type: string
+          created_at?: string | null
           event_data?: Json | null
-          ip_address?: string | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
           user_agent?: string | null
-          created_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
         }
         Update: {
-          id?: string
-          workspace_id?: string | null
-          user_id?: string | null
-          event_type?: string
+          created_at?: string | null
           event_data?: Json | null
-          ip_address?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
           user_agent?: string | null
-          created_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          first_name: string | null
+          id: string
+          last_login_at: string | null
+          last_name: string | null
+          status: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          last_login_at?: string | null
+          last_name?: string | null
+          status?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          last_login_at?: string | null
+          last_name?: string | null
+          status?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       system_controls: {
         Row: {
-          id: string
-          feature: string
-          enabled: boolean
           description: string | null
+          enabled: boolean | null
+          feature: string
+          id: string
+          updated_at: string | null
           updated_by: string | null
-          updated_at: string
         }
         Insert: {
-          id?: string
-          feature: string
-          enabled?: boolean
           description?: string | null
+          enabled?: boolean | null
+          feature: string
+          id?: string
+          updated_at?: string | null
           updated_by?: string | null
-          updated_at?: string
         }
         Update: {
-          id?: string
-          feature?: string
-          enabled?: boolean
           description?: string | null
+          enabled?: boolean | null
+          feature?: string
+          id?: string
+          updated_at?: string | null
           updated_by?: string | null
-          updated_at?: string
         }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          device_name: string | null
+          id: string
+          ip_address: unknown | null
+          last_used_at: string | null
+          refresh_token_id: string | null
+          user_agent: string | null
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_name?: string | null
+          id?: string
+          ip_address?: unknown | null
+          last_used_at?: string | null
+          refresh_token_id?: string | null
+          user_agent?: string | null
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_name?: string | null
+          id?: string
+          ip_address?: unknown | null
+          last_used_at?: string | null
+          refresh_token_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string
+          role: string
+          status: string | null
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by: string
+          role: string
+          status?: string | null
+          token: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string
+          role?: string
+          status?: string | null
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          joined_at: string | null
+          role: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          role: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_workspace_members_profile"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string | null
+          plan: string | null
+          seats_limit: number | null
+          settings: Json | null
+          slug: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          plan?: string | null
+          seats_limit?: number | null
+          settings?: Json | null
+          slug: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          plan?: string | null
+          seats_limit?: number | null
+          settings?: Json | null
+          slug?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -305,24 +366,32 @@ export type Database = {
     Functions: {
       create_workspace_with_owner: {
         Args: {
+          owner_user_id: string
           workspace_name: string
           workspace_slug: string
-          owner_user_id: string
         }
         Returns: string
       }
+      get_user_workspace_memberships: {
+        Args: { p_user_id: string }
+        Returns: {
+          role: string
+          workspace_id: string
+          workspace_name: string
+          workspace_plan: string
+          workspace_seats_limit: number
+          workspace_slug: string
+        }[]
+      }
       get_user_workspace_role: {
-        Args: {
-          p_user_id: string
-          p_workspace_id: string
-        }
+        Args: { p_user_id: string; p_workspace_id: string }
         Returns: string
       }
       user_has_permission: {
         Args: {
+          p_required_role: string
           p_user_id: string
           p_workspace_id: string
-          p_required_role: string
         }
         Returns: boolean
       }
@@ -330,5 +399,131 @@ export type Database = {
     Enums: {
       [_ in never]: never
     }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
