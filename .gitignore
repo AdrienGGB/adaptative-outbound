@@ -56,4 +56,4 @@ coverage/
 
 # Debug files (keep organized in supabase/debug-queries/)
 **/debug_*.sql
-!supabase/debug-queries/
+!supabase/debug-queries/*.sql
