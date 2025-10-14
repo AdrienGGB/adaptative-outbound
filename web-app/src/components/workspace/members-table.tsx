@@ -157,7 +157,7 @@ export function MembersTable({ members, onUpdate }: MembersTableProps) {
         {members.map((member) => (
           <TableRow key={member.id}>
             <TableCell className="font-medium">
-              {member.profile.first_name && member.profile.last_name
+              {member.profile?.first_name && member.profile?.last_name
                 ? `${member.profile.first_name} ${member.profile.last_name}`
                 : 'N/A'}
             </TableCell>
