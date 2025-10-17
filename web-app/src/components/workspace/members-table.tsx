@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClientRaw } from '@/lib/supabase/client-raw'
 import {
   Table,
@@ -43,17 +43,6 @@ export function MembersTable({ members, onUpdate }: MembersTableProps) {
   const supabase = createClientRaw()
 
   const isAdmin = currentUserRole === 'admin'
-
-  // Debug logging
-  useEffect(() => {
-    console.log('🎨 MembersTable received members:', members)
-    if (members.length > 0) {
-      console.log('🎨 First member structure:', members[0])
-      console.log('🎨 First member profile:', members[0].profile)
-      console.log('🎨 First member profile.email:', members[0].profile?.email)
-      console.log('🎨 First member user_id:', members[0].user_id)
-    }
-  }, [members])
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -165,78 +154,69 @@ export function MembersTable({ members, onUpdate }: MembersTableProps) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {members.map((member) => {
-          console.log('🔄 Rendering member:', {
-            id: member.id,
-            user_id: member.user_id,
-            profile: member.profile,
-            email: member.profile?.email
-          })
-
-          return (
-            <TableRow key={member.id}>
-              <TableCell className="font-medium">
-                {member.profile?.first_name && member.profile?.last_name
-                  ? `${member.profile.first_name} ${member.profile.last_name}`
-                  : member.profile?.email || 'N/A'}
-              </TableCell>
-              <TableCell>{member.profile?.email || member.user_id}</TableCell>
-              <TableCell>
-                {isAdmin && member.user_id !== user?.id ? (
-                  <Select
-                    value={member.role}
-                    onValueChange={(value) =>
-                      handleUpdateRole(member.id, value as UserRole)
-                    }
-                    disabled={updatingMember === member.id}
-                  >
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="sales_manager">Sales Manager</SelectItem>
-                      <SelectItem value="sdr">SDR</SelectItem>
-                      <SelectItem value="ae">AE</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Badge className={`${getRoleBadgeColor(member.role)} text-white`}>
-                    {getRoleLabel(member.role)}
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell>{formatDate(member.joined_at)}</TableCell>
-              {isAdmin && (
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={updatingMember === member.id}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => handleRemoveMember(member.id, member.user_id)}
-                        className="text-red-600"
-                        disabled={member.user_id === user?.id}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Remove
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+        {members.map((member) => (
+          <TableRow key={member.id}>
+            <TableCell className="font-medium">
+              {member.profile?.first_name && member.profile?.last_name
+                ? `${member.profile.first_name} ${member.profile.last_name}`
+                : member.profile?.email || 'N/A'}
+            </TableCell>
+            <TableCell>{member.profile?.email || member.user_id}</TableCell>
+            <TableCell>
+              {isAdmin && member.user_id !== user?.id ? (
+                <Select
+                  value={member.role}
+                  onValueChange={(value) =>
+                    handleUpdateRole(member.id, value as UserRole)
+                  }
+                  disabled={updatingMember === member.id}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="sales_manager">Sales Manager</SelectItem>
+                    <SelectItem value="sdr">SDR</SelectItem>
+                    <SelectItem value="ae">AE</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge className={`${getRoleBadgeColor(member.role)} text-white`}>
+                  {getRoleLabel(member.role)}
+                </Badge>
               )}
-            </TableRow>
-          )
-        })}
+            </TableCell>
+            <TableCell>{formatDate(member.joined_at)}</TableCell>
+            {isAdmin && (
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={updatingMember === member.id}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleRemoveMember(member.id, member.user_id)}
+                      className="text-red-600"
+                      disabled={member.user_id === user?.id}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remove
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            )}
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   )

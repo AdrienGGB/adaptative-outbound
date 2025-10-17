@@ -23,34 +23,19 @@ export default function MembersPage() {
     if (!workspace) return
 
     setLoadingMembers(true)
-    console.log('🔍 Fetching members for workspace:', workspace.id)
-
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('workspace_members')
       .select('*, profiles(id, first_name, last_name, email, avatar_url, status, created_at, updated_at)')
       .eq('workspace_id', workspace.id)
       .eq('status', 'active')
       .order('joined_at', { ascending: false })
 
-    console.log('📊 Raw Supabase response:', { data, error })
-
-    if (error) {
-      console.error('❌ Error fetching members:', error)
-    }
-
     if (data) {
-      console.log('✅ Members data received:', data)
-      console.log('📧 First member raw data:', data[0])
-
       // Transform the data: Supabase returns 'profiles' (plural) but our type expects 'profile' (singular)
       const transformedMembers = data.map((member: any) => ({
         ...member,
         profile: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
       })) as MemberWithProfile[]
-
-      console.log('🔄 Transformed members:', transformedMembers)
-      console.log('📧 First transformed member profile:', transformedMembers[0]?.profile)
-      console.log('📧 First transformed member email:', transformedMembers[0]?.profile?.email)
 
       setMembers(transformedMembers)
     }
