@@ -141,7 +141,8 @@ export default function ActivitiesPage() {
           filteredData = data.filter(
             (activity) =>
               activity.description?.toLowerCase().includes(query) ||
-              activity.notes?.toLowerCase().includes(query) ||
+              activity.subject?.toLowerCase().includes(query) ||
+              activity.body?.toLowerCase().includes(query) ||
               activity.activity_type.toLowerCase().includes(query)
           )
         }
@@ -299,7 +300,7 @@ export default function ActivitiesPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search activities by description or notes..."
+                placeholder="Search activities by description, subject, or type..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
