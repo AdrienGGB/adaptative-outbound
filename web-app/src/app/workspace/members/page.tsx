@@ -25,7 +25,7 @@ export default function MembersPage() {
     setLoadingMembers(true)
     const { data } = await supabase
       .from('workspace_members')
-      .select('*, profiles(*)')
+      .select('*, profiles(id, first_name, last_name, email, avatar_url, status, created_at, updated_at)')
       .eq('workspace_id', workspace.id)
       .eq('status', 'active')
       .order('joined_at', { ascending: false })
