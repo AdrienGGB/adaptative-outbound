@@ -228,6 +228,25 @@ This folder can contain:
 # Add .claude-code config file if needed
 ```
 
+**Notion MCP Integration:**
+
+The Notion MCP server is configured to allow Claude Code to read and interact with your Notion workspace for project documentation and planning.
+
+**Setup:**
+1. Integration already configured with token: `ntn_L4781322716axnHwqKzXzGUtQWEu9Erw29jeyDfyTs5dCU`
+2. Main project page: https://www.notion.so/Active-Outbound-28111cfd31dc81e8ab49d07cbe9d1b0e
+3. MCP server installed via: `@modelcontextprotocol/server-notion`
+
+**Usage:**
+- Claude Code can read Notion pages for project requirements, specifications, and documentation
+- Useful for syncing project planning between Notion and code implementation
+- **Note:** After configuring Notion MCP, restart Claude Code to activate the connection
+
+**Troubleshooting:**
+- If Notion MCP shows "Failed to connect", restart Claude Code
+- Ensure the integration has access to the pages you want Claude to read
+- Share pages with the integration from within Notion if access is needed
+
 ### 8. Git Configuration & Best Practices
 
 **Create `.gitignore` in root:**
@@ -399,12 +418,30 @@ SUPABASE_ANON_KEY=your_anon_key_here
 
 **Branch Strategy:**
 ```bash
-main              # Production-ready code (protected)
-├── develop       # Development branch (optional)
-├── feature/auth  # Feature branches
+main              # Production-ready code (protected, auto-deploys to Vercel)
+├── dev           # Active development branch
+├── feature/auth  # Feature branches (created from dev)
 ├── feature/posts
 ├── bugfix/login-error
 └── hotfix/critical-bug
+```
+
+**Workflow:**
+```bash
+# Start new feature
+git checkout dev
+git pull origin dev
+git checkout -b feature/your-feature
+
+# Work and commit
+git add .
+git commit -m "feat: your changes"
+git push -u origin feature/your-feature
+
+# Merge to dev (via PR or direct)
+# When dev is stable, merge dev -> main for production
+
+# See .github/BRANCHING_STRATEGY.md for complete guide
 ```
 
 **Commit Messages:**
@@ -596,13 +633,25 @@ alias glog='git log --oneline --graph --all'
 your-project/
 ├── .github/
 │   └── workflows/          # CI/CD pipelines
+├── .vscode/
+│   └── settings.json       # VSCode workspace settings
+├── docs/                   # All documentation
+│   ├── bug-fixes/         # Bug fix reports and summaries
+│   ├── testing/           # Test strategies and reports
+│   ├── development/       # Development history and logs
+│   ├── features/          # Feature documentation
+│   ├── reports/           # Analysis and audit reports
+│   └── setup/             # Setup and configuration guides
+├── supabase/              # Supabase configuration
+│   ├── migrations/        # Database migrations
+│   ├── functions/         # Edge functions
+│   └── debug-queries/     # SQL debug scripts
 ├── web-app/               # Next.js app
 ├── mobile-app/            # React Native app
 ├── shared/                # Shared code
-├── docs/                  # Documentation
 ├── .gitignore            # Global gitignore
-├── README.md             # Project overview
-└── PROJECT_SETUP.md      # This file
+├── CLAUDE.md             # Claude Code instructions (this file)
+└── README.md             # Project overview
 ```
 
 **Each app should have:**
