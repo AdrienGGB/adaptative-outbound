@@ -20,6 +20,8 @@ Build a robust, scalable data pipeline that:
 4. Provides real-time monitoring dashboard
 5. Guarantees zero data loss with persistent queue
 6. Scales horizontally for high-volume workloads
+7. **Enables BYOK (Bring Your Own Key) for enrichment APIs** - users provide their own Apollo.io API keys
+8. **Simplifies integration complexity** - focus on one reliable provider (Apollo.io) instead of multiple integrations
 
 ---
 
@@ -34,10 +36,11 @@ Build a robust, scalable data pipeline that:
 
 ### Data Enrichment
 
-1. **As an SDR**, I want accounts auto-enriched with firmographic data so I have context without manual research
-2. **As a user**, I want email verification to happen in the background so I know which contacts are valid
-3. **As a sales ops**, I want CRM sync to run continuously so data stays fresh
-4. **As a system**, I want to rate-limit enrichment API calls so we don't hit quotas
+1. **As a user**, I want to provide my own Apollo.io API key so enrichment uses my quota and credits
+2. **As an SDR**, I want accounts enriched with firmographic data (employee count, revenue, industry, technologies) so I have context without manual research
+3. **As a user**, I want contact enrichment to find emails and phone numbers so I can reach prospects
+4. **As a user**, I want email verification to happen in the background so I know which contacts are valid
+5. **As a system**, I want to rate-limit API calls per workspace so individual users don't exceed their Apollo quotas
 
 ### Monitoring & Reliability
 
@@ -95,6 +98,48 @@ Build a robust, scalable data pipeline that:
 ### Database Schema
 
 ```sql
+-- Workspace API Settings (BYOK)
+CREATE TABLE workspace_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE UNIQUE,
+
+  -- Apollo.io API Configuration (Bring Your Own Key)
+  apollo_api_key_encrypted TEXT, -- Encrypted using Supabase Vault
+  apollo_auto_enrich BOOLEAN DEFAULT false,
+
+  -- Usage Tracking
+  enrichment_credits_used INT DEFAULT 0,
+  last_enrichment_at TIMESTAMP,
+
+  -- Metadata
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_workspace_settings_workspace ON workspace_settings(workspace_id);
+
+-- RLS Policies
+ALTER TABLE workspace_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view settings in their workspace"
+  ON workspace_settings FOR SELECT
+  USING (
+    workspace_id IN (
+      SELECT workspace_id FROM workspace_members
+      WHERE user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Workspace admins can manage settings"
+  ON workspace_settings FOR ALL
+  USING (
+    workspace_id IN (
+      SELECT workspace_id FROM workspace_members
+      WHERE user_id = auth.uid()
+      AND role IN ('owner', 'admin')
+    )
+  );
+
 -- Job Queue Table
 CREATE TABLE jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -232,27 +277,26 @@ CREATE POLICY "Users can view logs for accessible jobs"
   );
 ```
 
-### Rate Limiting for Third-Party APIs
+### Rate Limiting for Apollo.io API
 
 ```sql
--- Track API rate limits to prevent exceeding quotas
+-- Track Apollo.io API rate limits per workspace to prevent exceeding user quotas
 CREATE TABLE rate_limits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,
 
   -- Rate Limit Key
   key VARCHAR(255) NOT NULL,
-  -- Format: "{service}:{workspace_id}" or "{service}:{workspace_id}:{user_id}"
-  -- Examples: "clearbit:abc123", "openai:abc123:user456", "salesforce:abc123"
+  -- Format: "apollo:{workspace_id}"
+  -- Example: "apollo:abc-123-def-456"
 
   -- Current Window
   requests INT DEFAULT 0,
   window_start TIMESTAMP DEFAULT NOW(),
   window_duration INTERVAL DEFAULT '1 minute',
 
-  -- Limits
-  max_requests INT NOT NULL,
-  -- Clearbit: 600/min, OpenAI: 500/min, Gmail: 2000/day
+  -- Limits (Apollo.io: 100 requests/minute for most plans)
+  max_requests INT NOT NULL DEFAULT 100,
 
   -- Metadata
   last_request_at TIMESTAMP,
@@ -435,79 +479,107 @@ $$ LANGUAGE plpgsql;
 ```json
 {
   "account_id": "uuid",
-  "enrich_fields": ["employee_count", "revenue", "technologies", "social_links"],
-  "provider": "clearbit" // or "zoominfo", "apollo"
+  "enrich_fields": ["employee_count", "revenue", "industry", "technologies", "founded_year", "linkedin_url"]
 }
 ```
 
 **Processing Steps:**
-1. Fetch account from database
-2. Call enrichment API (Clearbit, ZoomInfo, Apollo)
-3. Parse and validate response
-4. Update account record
-5. Create version snapshot
-6. Log enrichment activity
+1. Fetch account from database (get domain)
+2. Retrieve Apollo API key from workspace_settings (decrypt from Supabase Vault)
+3. Validate API key is configured
+4. Check rate limit for workspace
+5. Call Apollo.io Organization Enrichment API
+6. Parse and validate response
+7. Update account record with enriched data
+8. Increment enrichment_credits_used counter
+9. Create activity log entry
+10. Update rate_limits table
+
+**Apollo.io API Endpoint:**
+```
+POST https://api.apollo.io/v1/organizations/enrich
+{
+  "domain": "example.com"
+}
+```
 
 **Rate Limiting:**
-- Implement token bucket algorithm
-- Respect API quotas (e.g., 1000 calls/hour)
+- Check rate limit before API call
+- Apollo.io: 100 requests/minute per API key
 - Delay jobs if quota exceeded
+- Retry with exponential backoff on rate limit errors
+
+**Error Handling:**
+- No API key configured → Fail with clear message to user
+- Invalid API key → Fail and alert admin
+- Rate limit exceeded → Retry after window resets
+- Domain not found → Mark as enrichment_failed, don't retry
 
 ---
 
-### 3. CRM Sync Jobs
+### 3. Contact Enrichment Jobs
 
-**Job Type:** `sync_crm`
+**Job Type:** `enrich_contact`
 
 **Payload:**
 ```json
 {
-  "crm_provider": "salesforce",
-  "sync_direction": "bidirectional", // 'push', 'pull', 'bidirectional'
-  "entity_types": ["accounts", "contacts", "opportunities"],
-  "last_sync_at": "2024-01-01T00:00:00Z"
+  "contact_id": "uuid",
+  "enrich_fields": ["email", "phone", "title", "linkedin_url", "twitter_url"]
 }
 ```
 
 **Processing Steps:**
-1. Fetch changed records since `last_sync_at`
-2. Transform data to/from CRM format
-3. Detect conflicts (same record updated in both systems)
-4. Resolve conflicts using strategy (last_write_wins, manual_review)
-5. Batch sync records
-6. Update `last_sync_at` timestamp
+1. Fetch contact from database (first_name, last_name, company domain)
+2. Retrieve Apollo API key from workspace_settings
+3. Validate API key is configured
+4. Check rate limit for workspace
+5. Call Apollo.io People Enrichment API
+6. Parse and validate response
+7. Update contact record with enriched data
+8. Verify email if found
+9. Increment enrichment_credits_used counter
+10. Create activity log entry
 
----
-
-### 4. Email Batch Jobs
-
-**Job Type:** `send_email_batch`
-
-**Payload:**
-```json
+**Apollo.io API Endpoint:**
+```
+POST https://api.apollo.io/v1/people/match
 {
-  "sequence_id": "uuid",
-  "sequence_step_id": "uuid",
-  "contact_ids": ["uuid1", "uuid2", "..."],
-  "batch_size": 50
+  "first_name": "John",
+  "last_name": "Doe",
+  "organization_name": "Acme Corp"
 }
 ```
-
-**Processing Steps:**
-1. Fetch contacts and email template
-2. Personalize emails (merge variables)
-3. Send via email provider (SendGrid, AWS SES)
-4. Track sending status
-5. Log activities
-6. Update sequence state
 
 **Rate Limiting:**
-- Respect email provider limits (e.g., 50 emails/second)
-- Implement gradual warm-up for new domains
+- Same as account enrichment (100 req/min)
+- Share rate limit pool with account enrichment
+
+**Error Handling:**
+- No API key → Fail with message
+- Contact not found → Mark as enrichment_failed
+- Multiple matches → Pick best match by confidence score
+- Email found but invalid → Store but mark as unverified
 
 ---
 
-### 5. Data Export Jobs
+### 4. CRM Sync Jobs (Deferred to Future Feature)
+
+**Note:** CRM sync functionality has been deferred to a separate feature document to reduce F044 complexity. For now, users can export CSV and manually import to their CRM.
+
+**See:** Future feature document for full CRM integration
+
+---
+
+### 5. Email Batch Jobs (Deferred to Future Feature)
+
+**Note:** Email sequence functionality has been deferred to a separate feature to reduce F044 scope. Focus is on core data pipeline and enrichment first.
+
+**See:** Future email sequence feature document
+
+---
+
+### 6. Data Export Jobs
 
 **Job Type:** `export_data`
 
@@ -533,6 +605,61 @@ $$ LANGUAGE plpgsql;
 ---
 
 ## 🔌 API Endpoints
+
+### Workspace API Settings (BYOK)
+
+```
+GET    /api/workspace/settings
+Query: { workspace_id }
+Response: {
+  apollo_api_key_configured: boolean,
+  apollo_auto_enrich: boolean,
+  enrichment_credits_used: number,
+  last_enrichment_at: string
+}
+
+PUT    /api/workspace/settings
+Body: {
+  apollo_auto_enrich: boolean
+}
+Response: { settings }
+
+POST   /api/workspace/settings/apollo-key
+Body: {
+  api_key: string (encrypted in transit via HTTPS)
+}
+Response: {
+  success: boolean,
+  message: "API key stored successfully"
+}
+Note: API key is encrypted using Supabase Vault before storage
+
+DELETE /api/workspace/settings/apollo-key
+Response: {
+  success: boolean,
+  message: "API key removed"
+}
+
+POST   /api/workspace/settings/test-apollo-connection
+Response: {
+  success: boolean,
+  credits_remaining?: number,
+  error_message?: string
+}
+Note: Tests Apollo API connection and returns credit balance
+
+GET    /api/workspace/settings/enrichment-usage
+Query: { workspace_id, date_range? }
+Response: {
+  credits_used: number,
+  accounts_enriched: number,
+  contacts_enriched: number,
+  last_30_days: [{ date, credits }],
+  daily_average: number
+}
+```
+
+---
 
 ### Job Management
 
@@ -644,6 +771,92 @@ Response: {
 
 ---
 
+### 4. API Settings Page (Workspace Settings)
+
+**Location:** `/workspace/settings/api`
+
+**Header:**
+- Title: "API Integrations"
+- Subtitle: "Configure your enrichment API keys (BYOK - Bring Your Own Key)"
+
+**Apollo.io Section:**
+
+**Configuration Card:**
+- **API Key Input**:
+  - Label: "Apollo.io API Key"
+  - Input type: password (masked)
+  - Placeholder: "Enter your Apollo.io API key"
+  - Helper text: "Your API key is encrypted and stored securely using Supabase Vault"
+  - Link: "Get your API key from Apollo.io →" (opens apollo.io)
+
+- **Test Connection Button**:
+  - Disabled when no key is entered
+  - Shows loading state while testing
+  - Success: "✓ Connected - 12,450 credits remaining"
+  - Error: "✗ Invalid API key or connection failed"
+
+- **Auto-Enrich Toggle**:
+  - Label: "Auto-enrich new accounts and contacts"
+  - Helper text: "Automatically enrich accounts/contacts when they're created"
+  - Disabled when no API key is configured
+
+- **Actions**:
+  - "Save API Key" button (primary)
+  - "Remove API Key" button (destructive, only shown when key exists)
+
+**Usage Statistics Card:**
+- **This Month**:
+  - Credits used: 1,245
+  - Accounts enriched: 234
+  - Contacts enriched: 1,011
+
+- **Chart**: Line chart showing daily enrichment usage over last 30 days
+
+- **Daily Average**: 41.5 credits/day
+
+**Info Banner:**
+- Icon: Info circle
+- Message: "This feature uses your own Apollo.io API key and credits. We never charge for enrichment - you pay Apollo.io directly based on your plan."
+- Link: "Learn more about BYOK →"
+
+**States:**
+- **No API Key**: Show empty state with "Get Started" CTA
+- **API Key Configured**: Show usage stats and allow key removal
+- **Error State**: Show error message with retry option
+
+---
+
+### 5. Account/Contact Detail Page Enhancements
+
+**Enrich Button (on Account Detail Page):**
+
+**Location:** Header of account detail page, next to "Edit" button
+
+**Button States:**
+- **Default**: "Enrich" button with sparkle icon
+- **No API Key**: Button disabled with tooltip "Configure Apollo API key in Settings"
+- **Loading**: "Enriching..." with spinner
+- **Success**: Show toast "Account enriched successfully" + update UI with new data
+- **Error**: Show toast with error message
+
+**Enrichment Modal (optional):**
+- Title: "Enrich Account Data"
+- Preview: Show which fields will be enriched
+- Checkbox: "Auto-enrich similar accounts in the future"
+- Actions: "Enrich Now" (primary), "Cancel"
+
+**Post-Enrichment UI:**
+- Highlight newly enriched fields with subtle background color
+- Show "Last enriched: 2 minutes ago" timestamp
+- Option to "Re-enrich" if data is stale (>30 days old)
+
+**Similar for Contact Detail Page:**
+- "Enrich Contact" button
+- Finds email, phone, title, social profiles
+- Shows confidence score for found email
+
+---
+
 ## 🔐 Security & Reliability
 
 ### Job Execution Security
@@ -742,13 +955,19 @@ if (job.attempts < job.max_attempts) {
     "zod": "^3.22.4",
     "papaparse": "^5.4.1",
     "xlsx": "^0.18.5",
-    "bullmq": "^5.0.0",
-    "ioredis": "^5.3.2",
+    "axios": "^1.6.0",
     "pino": "^8.17.2",
     "date-fns": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.3.7"
   }
 }
 ```
+
+**Note:** Apollo.io doesn't have an official SDK. We'll use `axios` to call their REST API directly.
+
+**Apollo.io API Documentation:** https://apolloio.github.io/apollo-api-docs/
 
 ### Frontend (Dashboard)
 
@@ -758,7 +977,8 @@ if (job.attempts < job.max_attempts) {
     "@supabase/supabase-js": "^2.39.0",
     "@tanstack/react-query": "^5.17.0",
     "recharts": "^2.10.0",
-    "react-json-view": "^1.21.3"
+    "react-json-view": "^1.21.3",
+    "zod": "^3.22.4"
   }
 }
 ```
@@ -767,13 +987,16 @@ if (job.attempts < job.max_attempts) {
 
 ## 🚀 Implementation Plan
 
-### Week 1: Core Job Queue
+### Week 1: Core Job Queue & BYOK Setup
 
 **Days 1-2: Database & Schema**
+- [ ]  Create `workspace_settings` table with Apollo API key storage
 - [ ]  Create `jobs` and `job_logs` tables
-- [ ]  Set up RLS policies
+- [ ]  Create `rate_limits` table
+- [ ]  Set up RLS policies for all tables
 - [ ]  Create database indexes
 - [ ]  Write migration scripts
+- [ ]  Set up Supabase Vault for API key encryption
 
 **Days 3-4: Job Worker Foundation**
 - [ ]  Build job polling mechanism
@@ -781,33 +1004,64 @@ if (job.attempts < job.max_attempts) {
 - [ ]  Add retry logic with exponential backoff
 - [ ]  Create worker heartbeat system
 - [ ]  Write job logging utilities
+- [ ]  Implement rate limiting check function
 
-**Day 5: Basic Job Types**
+**Day 5: CSV Import Job**
 - [ ]  Implement CSV import job handler
 - [ ]  Add progress tracking
-- [ ]  Test end-to-end with sample data
+- [ ]  Test end-to-end with sample data (1000 rows)
 
 ---
 
-### Week 2: Advanced Features & Monitoring
+### Week 2: Apollo Integration & Enrichment
 
-**Days 1-2: Additional Job Handlers**
-- [ ]  Implement account enrichment job
-- [ ]  Add CRM sync job (mock for now)
-- [ ]  Create export job handler
-- [ ]  Implement rate limiting
+**Days 1-2: API Settings UI**
+- [ ]  Create `/workspace/settings/api` page
+- [ ]  Build Apollo API key input form with encryption
+- [ ]  Implement "Test Connection" functionality
+- [ ]  Add auto-enrich toggle
+- [ ]  Create usage statistics display
+- [ ]  Build enrichment usage chart (last 30 days)
 
-**Days 3-4: Monitoring Dashboard**
+**Days 3-4: Enrichment Jobs**
+- [ ]  Implement account enrichment job handler
+- [ ]  Implement contact enrichment job handler
+- [ ]  Integrate with Apollo.io API (organizations/enrich, people/match)
+- [ ]  Add rate limiting per workspace
+- [ ]  Handle API errors gracefully
+- [ ]  Update enrichment_credits_used counter
+
+**Day 5: Enrich Buttons & UI**
+- [ ]  Add "Enrich" button to account detail page
+- [ ]  Add "Enrich" button to contact detail page
+- [ ]  Implement enrichment modal
+- [ ]  Show enriched field highlights
+- [ ]  Add "Last enriched" timestamp display
+
+---
+
+### Week 3: Export, Monitoring & Polish
+
+**Days 1-2: Export Jobs & Monitoring Dashboard**
+- [ ]  Implement CSV/Excel export job handler
 - [ ]  Build job stats API endpoints
-- [ ]  Create admin dashboard UI
+- [ ]  Create jobs dashboard at `/workspace/jobs`
 - [ ]  Add real-time metrics (queue depth, throughput)
 - [ ]  Build job detail page with logs
 
-**Day 5: Performance & Testing**
+**Days 3-4: Performance & Testing**
 - [ ]  Load testing (1000 jobs/min target)
+- [ ]  Test Apollo enrichment with real API
 - [ ]  Optimize database queries
 - [ ]  Add dead letter queue handling
-- [ ]  Documentation and cleanup
+- [ ]  Test rate limiting accuracy
+
+**Day 5: Documentation & Deployment**
+- [ ]  Write API documentation
+- [ ]  Create user guide for BYOK setup
+- [ ]  Add error handling documentation
+- [ ]  Deploy to staging
+- [ ]  Final QA and bug fixes
 
 ---
 
