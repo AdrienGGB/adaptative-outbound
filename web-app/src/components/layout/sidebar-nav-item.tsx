@@ -37,25 +37,25 @@ export function SidebarNavItem({
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-        'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-sidebar-primary',
+        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all',
+        'hover:bg-sidebar-accent/50',
+        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
         disabled && 'pointer-events-none opacity-50',
         collapsed && 'justify-center px-2'
       )}
       aria-current={isActive ? 'page' : undefined}
       aria-disabled={disabled}
     >
-      <Icon className={cn('h-5 w-5 flex-shrink-0', collapsed && 'h-6 w-6')} />
+      <Icon className={cn('h-4 w-4 flex-shrink-0', collapsed && 'h-5 w-5')} />
 
       {!collapsed && (
         <>
-          <span className="flex-1">{label}</span>
+          <span className="flex-1 truncate">{label}</span>
 
           {badge && badge.count > 0 && (
             <Badge
-              variant={badge.variant || 'default'}
-              className="ml-auto h-5 min-w-[20px] justify-center px-1 text-xs"
+              variant={badge.variant || 'secondary'}
+              className="ml-auto h-5 min-w-[20px] justify-center px-1.5 text-xs font-medium"
             >
               {badge.count > 99 ? '99+' : badge.count}
             </Badge>

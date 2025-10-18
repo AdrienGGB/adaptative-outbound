@@ -28,6 +28,8 @@ export function UserMenu({ collapsed = false, className }: UserMenuProps) {
     ? user.email.substring(0, 2).toUpperCase()
     : 'U'
 
+  const userName = user.email?.split('@')[0] || 'User'
+
   const handleSignOut = async () => {
     await signOut()
     router.push('/login')
@@ -39,35 +41,45 @@ export function UserMenu({ collapsed = false, className }: UserMenuProps) {
         <Button
           variant="ghost"
           className={cn(
-            'w-full justify-start gap-3 px-3 py-2',
+            'w-full justify-start gap-3 h-auto py-2 px-2 hover:bg-sidebar-accent/50',
             collapsed && 'justify-center px-2',
             className
           )}
         >
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          <Avatar className="h-8 w-8 flex-shrink-0">
+            <AvatarFallback className="text-xs font-medium">
+              {initials}
+            </AvatarFallback>
           </Avatar>
 
           {!collapsed && (
             <>
               <div className="flex flex-col items-start text-left flex-1 min-w-0">
                 <p className="text-sm font-medium truncate w-full">
+                  {userName}
+                </p>
+                <p className="text-xs text-muted-foreground truncate w-full">
                   {user.email}
                 </p>
               </div>
-              <ChevronDown className="h-4 w-4 opacity-50" />
+              <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
             </>
           )}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-56" align="end">
+      <PopoverContent className="w-56" align="start" side="top">
         <div className="flex items-center gap-3 p-2">
           <Avatar className="h-10 w-10">
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback className="font-medium">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user.email}</p>
+            <p className="text-sm font-medium truncate">
+              {userName}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {user.email}
+            </p>
           </div>
         </div>
 
@@ -76,22 +88,22 @@ export function UserMenu({ collapsed = false, className }: UserMenuProps) {
         <div className="space-y-1">
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3"
+            className="w-full justify-start gap-3 h-9"
             onClick={() => router.push('/workspace/settings')}
           >
             <Settings className="h-4 w-4" />
-            <span>Settings</span>
+            <span className="text-sm">Settings</span>
           </Button>
 
-          <Separator className="my-2" />
+          <Separator className="my-1" />
 
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+            className="w-full justify-start gap-3 h-9 text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
-            <span>Sign Out</span>
+            <span className="text-sm">Sign Out</span>
           </Button>
         </div>
       </PopoverContent>
