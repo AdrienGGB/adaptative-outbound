@@ -37,16 +37,25 @@ export function SidebarNavItem({
     <Link
       href={href}
       className={cn(
-        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all',
-        'hover:bg-sidebar-accent/50',
-        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground',
+        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200',
+        'hover:bg-sidebar-accent/30 hover:text-sidebar-foreground',
+        'relative',
+        isActive && [
+          'bg-sidebar-accent/20 text-sidebar-primary',
+          'before:absolute before:left-0 before:top-1 before:bottom-1',
+          'before:w-0.5 before:bg-sidebar-primary before:rounded-full'
+        ],
         disabled && 'pointer-events-none opacity-50',
         collapsed && 'justify-center px-2'
       )}
       aria-current={isActive ? 'page' : undefined}
       aria-disabled={disabled}
     >
-      <Icon className={cn('h-4 w-4 flex-shrink-0', collapsed && 'h-5 w-5')} />
+      <Icon className={cn(
+        'h-4 w-4 flex-shrink-0 transition-colors duration-200',
+        collapsed && 'h-5 w-5',
+        isActive && 'text-sidebar-primary'
+      )} />
 
       {!collapsed && (
         <>

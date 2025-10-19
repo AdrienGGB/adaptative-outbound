@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSidebar } from '@/hooks/use-sidebar'
 import { useBadgeCounts } from '@/hooks/use-badge-counts'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -40,30 +41,54 @@ export function Sidebar({ className }: SidebarProps) {
         className
       )}
     >
-      {/* Workspace Header */}
-      <div className={cn('flex h-14 items-center px-3 border-b', collapsed && 'justify-center px-2')}>
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <Avatar className="h-8 w-8 flex-shrink-0">
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
-              {workspaceInitials}
-            </AvatarFallback>
-          </Avatar>
-
-          {!collapsed && workspace && (
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold truncate">{workspace.name}</p>
-              </div>
-              <p className="text-xs text-muted-foreground capitalize">{workspace.plan}</p>
+      {/* Brand Logo & Workspace Header */}
+      <div className={cn('flex flex-col border-b', collapsed ? 'h-16 items-center justify-center px-2' : 'h-auto py-3 px-3')}>
+        {collapsed ? (
+          <Link href="/" className="flex items-center justify-center">
+            <div className="relative h-12 w-12">
+              <Image
+                src="/logo/Logo_Nobackground_logoOnly.png"
+                alt="Adaptive Outbound"
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
-          )}
+          </Link>
+        ) : (
+          <>
+            {/* Logo */}
+            <Link href="/" className="flex items-center h-9 mb-3">
+              <div className="relative h-9 w-48 overflow-hidden">
+                <Image
+                  src="/logo/Logo_Nobackground_horizontal.png"
+                  alt="Adaptive Outbound"
+                  fill
+                  className="object-cover object-left scale-110"
+                  style={{ objectPosition: 'left center' }}
+                  priority
+                />
+              </div>
+            </Link>
 
-          {!collapsed && (
-            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0">
-              <ChevronsUpDown className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+            {/* Workspace Info */}
+            {workspace && (
+              <div className="flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md bg-sidebar-accent/10">
+                <Avatar className="h-6 w-6 flex-shrink-0">
+                  <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-semibold">
+                    {workspaceInitials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate text-sidebar-foreground/90">{workspace.name}</p>
+                </div>
+                <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0 hover:bg-sidebar-accent/20">
+                  <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Navigation Sections */}
@@ -72,8 +97,8 @@ export function Sidebar({ className }: SidebarProps) {
           {navigationSections.map((section, index) => (
             <div key={section.name} className="space-y-0.5">
               {!collapsed && index > 0 && (
-                <div className="px-3 py-2">
-                  <p className="text-xs font-semibold text-muted-foreground/60">
+                <div className="px-3 py-2 mt-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50">
                     {section.name}
                   </p>
                 </div>
@@ -121,17 +146,18 @@ export function Sidebar({ className }: SidebarProps) {
           size="sm"
           onClick={toggle}
           className={cn(
-            'w-full justify-start h-9',
-            collapsed && 'justify-center px-0'
+            'w-full h-9',
+            collapsed ? 'justify-center px-0' : 'justify-start'
           )}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5" />
           ) : (
             <>
               <ChevronLeft className="h-4 w-4 mr-2" />
-              <span className="text-xs">Collapse sidebar</span>
+              <span className="text-xs">Collapse</span>
             </>
           )}
         </Button>
