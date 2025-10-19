@@ -6,11 +6,11 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher'
-import { Users, Settings, LogOut } from 'lucide-react'
+import { AppShell } from '@/components/layout/app-shell'
+import { Users, Settings } from 'lucide-react'
 
 export default function WorkspacePage() {
-  const { workspace, role, user, loading, signOut } = useAuth()
+  const { workspace, role, user, loading } = useAuth()
   const [memberCount, setMemberCount] = useState(0)
   const router = useRouter()
   const supabase = createClient()
@@ -29,12 +29,7 @@ export default function WorkspacePage() {
     }
 
     fetchMemberCount()
-  }, [workspace])
-
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/login')
-  }
+  }, [workspace, supabase])
 
   if (loading) {
     return (
@@ -83,21 +78,8 @@ export default function WorkspacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">Adaptive Outbound</h1>
-            <WorkspaceSwitcher />
-          </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
+    <AppShell>
+      <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h2 className="text-3xl font-bold">{workspace.name}</h2>
           <p className="text-muted-foreground">Your role: {getRoleLabel(role)}</p>
@@ -155,9 +137,6 @@ export default function WorkspacePage() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full" onClick={() => router.push('/dashboard')}>
-                Go to Dashboard
-              </Button>
               <Button variant="outline" className="w-full" onClick={() => router.push('/accounts')}>
                 View Accounts
               </Button>
@@ -176,7 +155,7 @@ export default function WorkspacePage() {
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }
