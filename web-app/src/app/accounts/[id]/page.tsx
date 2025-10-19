@@ -9,13 +9,13 @@ import {
   getAccountActivities,
 } from "@/services"
 import type { Account, Contact, Activity } from "@/types"
+import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
-  Building2,
   Globe,
   MapPin,
   Users,
@@ -117,29 +117,31 @@ export default function AccountDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <AppShell>
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-12 w-64 mb-4" />
           <Skeleton className="h-64 w-full" />
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   if (!workspace || !account) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Not Found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push("/accounts")}>
-              Back to Accounts
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Not Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => router.push("/accounts")}>
+                Back to Accounts
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppShell>
     )
   }
 
@@ -185,47 +187,29 @@ export default function AccountDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="border-b bg-white dark:bg-gray-800 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={() => router.push("/accounts")}>
-                ← Back
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <Building2 className="h-6 w-6" />
-                  {account.name}
-                </h1>
-                {account.domain && (
-                  <p className="text-sm text-muted-foreground">
-                    {account.domain}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge className={getStatusColor(account.status)}>
-                {account.status}
-              </Badge>
-              {account.lifecycle_stage && (
-                <Badge className={getLifecycleColor(account.lifecycle_stage)}>
-                  {account.lifecycle_stage}
-                </Badge>
-              )}
-              <Button onClick={() => setEditDialogOpen(true)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Button>
-            </div>
-          </div>
+    <AppShell
+      breadcrumbs={[
+        { label: 'Accounts', href: '/accounts' },
+        { label: account.name }
+      ]}
+      actions={
+        <div className="flex items-center gap-2">
+          <Badge className={getStatusColor(account.status)}>
+            {account.status}
+          </Badge>
+          {account.lifecycle_stage && (
+            <Badge className={getLifecycleColor(account.lifecycle_stage)}>
+              {account.lifecycle_stage}
+            </Badge>
+          )}
+          <Button onClick={() => setEditDialogOpen(true)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      }
+    >
+      <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -567,7 +551,7 @@ export default function AccountDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -604,6 +588,6 @@ export default function AccountDetailPage() {
         accountId={accountId}
         onSuccess={handleActivityLogged}
       />
-    </div>
+    </AppShell>
   )
 }

@@ -6,6 +6,7 @@ import { getContacts, searchContacts } from "@/services"
 import type { Contact, ContactFilters } from "@/types"
 import { ContactsTable } from "@/components/contacts/contacts-table"
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog"
+import { AppShell } from "@/components/layout/app-shell"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Filter, Users } from "lucide-react"
+import { Search, Filter } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
 
@@ -95,42 +96,21 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="border-b bg-white dark:bg-gray-800 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/workspace")}
-              >
-                ← Back
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <Users className="h-6 w-6" />
-                  Contacts
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {workspace.name}
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => setCreateContactOpen(true)}>
-              New Contact
-            </Button>
-            <CreateContactDialog
-              open={createContactOpen}
-              onOpenChange={setCreateContactOpen}
-              workspaceId={workspace.id}
-            />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <AppShell
+      actions={
+        <>
+          <Button onClick={() => setCreateContactOpen(true)}>
+            New Contact
+          </Button>
+          <CreateContactDialog
+            open={createContactOpen}
+            onOpenChange={setCreateContactOpen}
+            workspaceId={workspace.id}
+          />
+        </>
+      }
+    >
+      <div className="container mx-auto px-4 py-8">
         {/* Search and Filters */}
         <div className="mb-6 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
@@ -250,7 +230,7 @@ export default function ContactsPage() {
         ) : (
           <ContactsTable contacts={contacts} />
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }

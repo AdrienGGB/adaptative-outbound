@@ -8,11 +8,11 @@ import { useAuth } from '@/lib/auth/auth-context'
 import { navigationSections } from '@/lib/navigation'
 import { SidebarNavItem } from './sidebar-nav-item'
 import { UserMenu } from './user-menu'
+import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ChevronLeft, ChevronRight, ChevronsUpDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -22,16 +22,6 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const { collapsed, toggle } = useSidebar()
   const { counts } = useBadgeCounts()
-  const { workspace } = useAuth()
-
-  const workspaceInitials = workspace?.name
-    ? workspace.name
-        .split(' ')
-        .map(word => word[0])
-        .join('')
-        .substring(0, 2)
-        .toUpperCase()
-    : 'WS'
 
   return (
     <aside
@@ -71,22 +61,10 @@ export function Sidebar({ className }: SidebarProps) {
               </div>
             </Link>
 
-            {/* Workspace Info */}
-            {workspace && (
-              <div className="flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md bg-sidebar-accent/10">
-                <Avatar className="h-6 w-6 flex-shrink-0">
-                  <AvatarFallback className="bg-muted text-muted-foreground text-[10px] font-semibold">
-                    {workspaceInitials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate text-sidebar-foreground/90">{workspace.name}</p>
-                </div>
-                <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0 hover:bg-sidebar-accent/20">
-                  <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </div>
-            )}
+            {/* Workspace Switcher */}
+            <div className="px-1">
+              <WorkspaceSwitcher />
+            </div>
           </>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth/auth-context"
 import { TaskList } from "@/components/tasks/task-list"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
+import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -100,27 +101,23 @@ export default function TasksPage() {
 
   if (!user || !workspace) {
     return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-muted-foreground">Please sign in to view tasks</p>
-          </CardContent>
-        </Card>
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center h-[50vh]">
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground">Please sign in to view tasks</p>
+            </CardContent>
+          </Card>
+        </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">My Tasks</h1>
-          <p className="text-muted-foreground">
-            Manage and track your tasks and to-dos
-          </p>
-        </div>
-        <CreateTaskDialog workspaceId={workspace.id} onSuccess={loadTasks} />
-      </div>
+    <AppShell
+      actions={<CreateTaskDialog workspaceId={workspace.id} onSuccess={loadTasks} />}
+    >
+      <div className="container mx-auto py-8 px-4 max-w-6xl">
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -287,6 +284,7 @@ export default function TasksPage() {
           />
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AppShell>
   )
 }

@@ -9,6 +9,7 @@ import {
   getContactAccount,
 } from "@/services"
 import type { Contact, Activity, Account } from "@/types"
+import { AppShell } from "@/components/layout/app-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -18,7 +19,6 @@ import { ActivityTimeline } from "@/components/activities/activity-timeline"
 import { LogActivityDialog } from "@/components/activities/log-activity-dialog"
 import { EditContactDialog } from "@/components/contacts/edit-contact-dialog"
 import {
-  ArrowLeft,
   Mail,
   Phone,
   Building2,
@@ -107,12 +107,14 @@ export default function ContactDetailPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+      <AppShell>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">Loading...</p>
+          </div>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
@@ -121,43 +123,32 @@ export default function ContactDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/contacts")}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Contacts
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => setLogActivityOpen(true)}>
-                Log Activity
-              </Button>
-              <LogActivityDialog
-                open={logActivityOpen}
-                onOpenChange={setLogActivityOpen}
-                workspaceId={workspace.id}
-                contactId={contact.id}
-                onSuccess={refreshActivities}
-              />
-              <EditContactDialog
-                workspaceId={workspace.id}
-                contact={contact}
-                onSuccess={refreshContact}
-              />
-            </div>
-          </div>
+    <AppShell
+      breadcrumbs={[
+        { label: 'Contacts', href: '/contacts' },
+        { label: contact.full_name }
+      ]}
+      actions={
+        <div className="flex gap-2">
+          <Button onClick={() => setLogActivityOpen(true)}>
+            Log Activity
+          </Button>
+          <LogActivityDialog
+            open={logActivityOpen}
+            onOpenChange={setLogActivityOpen}
+            workspaceId={workspace.id}
+            contactId={contact.id}
+            onSuccess={refreshActivities}
+          />
+          <EditContactDialog
+            workspaceId={workspace.id}
+            contact={contact}
+            onSuccess={refreshContact}
+          />
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      }
+    >
+      <div className="container mx-auto px-4 py-8">
         {/* Contact Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between">
@@ -448,7 +439,7 @@ export default function ContactDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }

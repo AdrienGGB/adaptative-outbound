@@ -6,6 +6,7 @@ import { getActivities } from "@/services"
 import type { Activity, ActivityFilters, ActivityType } from "@/types"
 import { ActivityTimeline } from "@/components/activities/activity-timeline"
 import { LogActivityDialog } from "@/components/activities/log-activity-dialog"
+import { AppShell } from "@/components/layout/app-shell"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,10 +20,10 @@ import {
 import {
   Search,
   Filter,
-  Activity as ActivityIcon,
   Mail,
   Phone,
   Calendar,
+  Activity as ActivityIcon,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
@@ -199,43 +200,22 @@ export default function ActivitiesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="border-b bg-white dark:bg-gray-800 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => router.push("/workspace")}
-              >
-                ← Back
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <ActivityIcon className="h-6 w-6" />
-                  Activities
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {workspace.name}
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => setLogActivityOpen(true)}>
-              Log Activity
-            </Button>
-            <LogActivityDialog
-              open={logActivityOpen}
-              onOpenChange={setLogActivityOpen}
-              workspaceId={workspace.id}
-              onSuccess={refreshActivities}
-            />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+    <AppShell
+      actions={
+        <>
+          <Button onClick={() => setLogActivityOpen(true)}>
+            Log Activity
+          </Button>
+          <LogActivityDialog
+            open={logActivityOpen}
+            onOpenChange={setLogActivityOpen}
+            workspaceId={workspace.id}
+            onSuccess={refreshActivities}
+          />
+        </>
+      }
+    >
+      <div className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
@@ -378,7 +358,7 @@ export default function ActivitiesPage() {
         ) : (
           <ActivityTimeline activities={activities} />
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }
