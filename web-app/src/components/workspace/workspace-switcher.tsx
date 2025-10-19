@@ -89,15 +89,18 @@ export function WorkspaceSwitcher() {
   }
 
   if (loading || !workspace) {
-    return <div className="h-10 w-48 animate-pulse rounded-md bg-gray-200" />
+    return <div className="h-10 w-48 rounded-md bg-muted/30" />
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-[200px] justify-between">
-          <span className="truncate">{workspace.name}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        <Button
+          variant="ghost"
+          className="w-full justify-between h-auto py-2 px-2 hover:bg-sidebar-accent/20 text-left font-normal"
+        >
+          <span className="truncate text-xs font-medium text-sidebar-foreground/90">{workspace.name}</span>
+          <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[200px]">
