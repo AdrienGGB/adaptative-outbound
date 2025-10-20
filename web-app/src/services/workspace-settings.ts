@@ -18,14 +18,16 @@ const supabase = createClient();
 export async function getWorkspaceSettings(
   workspaceId: string,
 ): Promise<WorkspaceSettings> {
-  let { data, error } = await supabase
+  const { data: initialData, error: fetchError } = await supabase
     .from('workspace_settings')
     .select('*')
     .eq('workspace_id', workspaceId)
     .single();
 
+  let data = initialData;
+
   // If settings don't exist, create them
-  if (error && error.code === 'PGRST116') {
+  if (fetchError && fetchError.code === 'PGRST116') {
     const { data: newSettings, error: createError } = await supabase
       .from('workspace_settings')
       .insert({
@@ -38,8 +40,8 @@ export async function getWorkspaceSettings(
 
     if (createError) throw createError;
     data = newSettings;
-  } else if (error) {
-    throw error;
+  } else if (fetchError) {
+    throw fetchError;
   }
 
   // Transform for frontend (don't send actual API key)
