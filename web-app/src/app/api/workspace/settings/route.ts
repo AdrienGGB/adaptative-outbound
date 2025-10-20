@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get settings (RLS will enforce workspace access)
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('workspace_settings')
       .select('*')
       .eq('workspace_id', workspaceId)
