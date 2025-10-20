@@ -11,6 +11,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { AlertCircle, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -23,6 +33,9 @@ export default function SettingsPage() {
   const { workspace, role, user, loading, signOut, refreshWorkspace } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const router = useRouter()
   const supabase = createClientRaw()
 
@@ -76,30 +89,50 @@ export default function SettingsPage() {
   const handleDeleteWorkspace = async () => {
     if (!workspace) return
 
-    const confirmText = `Delete ${workspace.name}`
-    const userInput = prompt(
-      `Are you sure you want to delete this workspace? This action cannot be undone.\n\nType "${confirmText}" to confirm:`
-    )
-
-    if (userInput !== confirmText) {
+    // Check confirmation text
+    const expectedText = workspace.name
+    if (deleteConfirmText !== expectedText) {
+      toast.error(`Please type "${expectedText}" to confirm deletion`)
       return
     }
 
+    setDeleting(true)
+
     try {
-      // Use type assertion to bypass strict Supabase type checking
+      // Perform a HARD delete - this will cascade delete all related data
+      // Thanks to ON DELETE CASCADE foreign keys in the schema
       const result: any = await (supabase as any)
         .from('workspaces')
-        .update({ status: 'deleted' })
+        .delete()
         .eq('id', workspace.id)
 
-      if (result.error) throw result.error
+      if (result.error) {
+        console.error('Delete error:', result.error)
+        throw result.error
+      }
 
-      toast.success('Workspace deleted')
+      toast.success('Workspace deleted successfully')
+
+      // Sign out and redirect to login
       await signOut()
       router.push('/login')
     } catch (err) {
       console.error('Error deleting workspace:', err)
-      toast.error('Failed to delete workspace')
+
+      // Provide helpful error messages
+      if (err instanceof Error) {
+        if (err.message.includes('permission denied') || err.message.includes('policy')) {
+          toast.error('You do not have permission to delete this workspace. Only workspace owners and admins can delete workspaces.')
+        } else {
+          toast.error(`Failed to delete workspace: ${err.message}`)
+        }
+      } else {
+        toast.error('Failed to delete workspace. Please try again.')
+      }
+    } finally {
+      setDeleting(false)
+      setShowDeleteDialog(false)
+      setDeleteConfirmText('')
     }
   }
 
@@ -211,9 +244,13 @@ export default function SettingsPage() {
                     Permanently delete this workspace and all associated data. This action
                     cannot be undone.
                   </p>
-                  <Button variant="destructive" onClick={handleDeleteWorkspace}>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={deleting}
+                  >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Workspace
+                    {deleting ? 'Deleting...' : 'Delete Workspace'}
                   </Button>
                 </div>
               </div>
@@ -221,6 +258,57 @@ export default function SettingsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Workspace</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                This will permanently delete the workspace <strong>{workspace.name}</strong> and all associated data including:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>All members and invitations</li>
+                <li>All accounts and contacts</li>
+                <li>All activities and tasks</li>
+                <li>All settings and configurations</li>
+                <li>All jobs and history</li>
+              </ul>
+              <p className="font-semibold text-red-600 pt-2">
+                This action cannot be undone.
+              </p>
+              <div className="pt-2">
+                <Label htmlFor="delete-confirm">
+                  Type <strong>{workspace.name}</strong> to confirm:
+                </Label>
+                <Input
+                  id="delete-confirm"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={workspace.name}
+                  className="mt-2"
+                  autoComplete="off"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteConfirmText('')
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteWorkspace}
+              disabled={deleteConfirmText !== workspace.name || deleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? 'Deleting...' : 'Delete Workspace'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   )
 }

@@ -44,6 +44,13 @@ CREATE POLICY "Workspace admins can manage settings"
       WHERE user_id = auth.uid()
       AND role IN ('owner', 'admin')
     )
+  )
+  WITH CHECK (
+    workspace_id IN (
+      SELECT workspace_id FROM workspace_members
+      WHERE user_id = auth.uid()
+      AND role IN ('owner', 'admin')
+    )
   );
 
 -- ============================================
