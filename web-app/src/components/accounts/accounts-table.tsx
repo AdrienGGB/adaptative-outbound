@@ -9,15 +9,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { Account } from "@/types"
 import { useRouter } from "next/navigation"
-import { Building2 } from "lucide-react"
+import { Building2, CheckCircle2 } from "lucide-react"
 
 interface AccountsTableProps {
   accounts: Account[]
+  selectedAccounts?: Set<string>
+  onSelectAccount?: (accountId: string) => void
 }
 
-export function AccountsTable({ accounts }: AccountsTableProps) {
+export function AccountsTable({ accounts, selectedAccounts = new Set(), onSelectAccount }: AccountsTableProps) {
   const router = useRouter()
 
   const getStatusColor = (status: string) => {
@@ -54,6 +57,19 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
     }
   }
 
+  const isEnriched = (account: Account) => {
+    return !!account.enriched_at
+  }
+
+  const handleRowClick = (accountId: string, e: React.MouseEvent) => {
+    // Don't navigate if clicking checkbox
+    const target = e.target as HTMLElement
+    if (target.closest('[data-checkbox]')) {
+      return
+    }
+    router.push(`/accounts/${accountId}`)
+  }
+
   if (accounts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -71,6 +87,7 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectAccount && <TableHead className="w-12"></TableHead>}
             <TableHead>Name</TableHead>
             <TableHead>Domain</TableHead>
             <TableHead>Industry</TableHead>
@@ -85,12 +102,23 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
             <TableRow
               key={account.id}
               className="cursor-pointer hover:bg-muted/50"
-              onClick={() => router.push(`/accounts/${account.id}`)}
+              onClick={(e) => handleRowClick(account.id, e)}
             >
+              {onSelectAccount && (
+                <TableCell data-checkbox onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedAccounts.has(account.id)}
+                    onCheckedChange={() => onSelectAccount(account.id)}
+                  />
+                </TableCell>
+              )}
               <TableCell className="font-medium">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   {account.name}
+                  {isEnriched(account) && (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" title="Enriched" />
+                  )}
                 </div>
               </TableCell>
               <TableCell>
