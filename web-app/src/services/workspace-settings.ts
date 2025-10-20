@@ -18,7 +18,7 @@ const supabase = createClient();
 export async function getWorkspaceSettings(
   workspaceId: string,
 ): Promise<WorkspaceSettings> {
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('workspace_settings')
     .select('*')
     .eq('workspace_id', workspaceId)
