@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { id } = await params
 
     // Check auth
     const {
@@ -22,7 +23,7 @@ export async function POST(
     const { data: job, error: fetchError } = await supabase
       .from('jobs')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError || !job) {
@@ -50,7 +51,7 @@ export async function POST(
         started_at: null,
         completed_at: null,
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 

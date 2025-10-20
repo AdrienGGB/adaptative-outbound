@@ -3,10 +3,11 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { id } = await params
 
     // Check auth
     const {
@@ -20,9 +21,9 @@ export async function POST(
 
     // Get current job to verify it can be cancelled
     const { data: job, error: fetchError } = await supabase
-      .from('jobs')
+      .from('jobs' as any)
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError || !job) {
@@ -44,7 +45,7 @@ export async function POST(
         status: 'cancelled',
         completed_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 

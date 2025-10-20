@@ -18,7 +18,8 @@ const supabase = createClient();
 export async function getWorkspaceSettings(
   workspaceId: string,
 ): Promise<WorkspaceSettings> {
-  const { data, error } = await supabase
+  // eslint-disable-next-line prefer-const
+  let { data, error } = await supabase
     .from('workspace_settings')
     .select('*')
     .eq('workspace_id', workspaceId)

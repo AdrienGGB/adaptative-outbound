@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get settings (RLS will enforce workspace access)
-    const { data, error } = await supabase
+    // eslint-disable-next-line prefer-const
+    let { data, error } = await supabase
       .from('workspace_settings')
       .select('*')
       .eq('workspace_id', workspaceId)
