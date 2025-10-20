@@ -27,14 +27,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get settings (RLS will enforce workspace access)
-    const { data, error } = await supabase
+    const { data: initialData, error: fetchError } = await supabase
       .from('workspace_settings')
       .select('*')
       .eq('workspace_id', workspaceId)
       .single()
 
+    let data = initialData
+
     // If settings don't exist, create them
-    if (error && error.code === 'PGRST116') {
+    if (fetchError && fetchError.code === 'PGRST116') {
       const { data: newSettings, error: createError } = await supabase
         .from('workspace_settings')
         .insert({
@@ -54,8 +56,8 @@ export async function GET(request: NextRequest) {
       }
 
       data = newSettings
-    } else if (error) {
-      console.error('Error fetching workspace settings:', error)
+    } else if (fetchError) {
+      console.error('Error fetching workspace settings:', fetchError)
       return NextResponse.json(
         { error: 'Failed to fetch settings' },
         { status: 500 }
