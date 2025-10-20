@@ -23,8 +23,9 @@ dist/
 .expo/
 .expo-shared/
 
-# IDE
-.vscode/
+# IDE (keep .vscode/settings.json in repo)
+.vscode/*
+!.vscode/settings.json
 .idea/
 *.swp
 *.swo
@@ -52,3 +53,7 @@ coverage/
 # Supabase
 .branches
 .temp
+
+# Debug files (keep organized in supabase/debug-queries/)
+**/debug_*.sql
+!supabase/debug-queries/*.sql

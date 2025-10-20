@@ -633,13 +633,25 @@ alias glog='git log --oneline --graph --all'
 your-project/
 ├── .github/
 │   └── workflows/          # CI/CD pipelines
+├── .vscode/
+│   └── settings.json       # VSCode workspace settings
+├── docs/                   # All documentation
+│   ├── bug-fixes/         # Bug fix reports and summaries
+│   ├── testing/           # Test strategies and reports
+│   ├── development/       # Development history and logs
+│   ├── features/          # Feature documentation
+│   ├── reports/           # Analysis and audit reports
+│   └── setup/             # Setup and configuration guides
+├── supabase/              # Supabase configuration
+│   ├── migrations/        # Database migrations
+│   ├── functions/         # Edge functions
+│   └── debug-queries/     # SQL debug scripts
 ├── web-app/               # Next.js app
 ├── mobile-app/            # React Native app
 ├── shared/                # Shared code
-├── docs/                  # Documentation
 ├── .gitignore            # Global gitignore
-├── README.md             # Project overview
-└── PROJECT_SETUP.md      # This file
+├── CLAUDE.md             # Claude Code instructions (this file)
+└── README.md             # Project overview
 ```
 
 **Each app should have:**

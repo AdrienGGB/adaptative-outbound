@@ -12,5 +12,5 @@ export type WorkspaceWithRole = Workspace & {
 }
 
 export type MemberWithProfile = WorkspaceMember & {
-  profile: Profile
+  profile: Profile | null
 }

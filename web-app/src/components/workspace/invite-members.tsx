@@ -31,11 +31,20 @@ import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 
 type InviteMembersProps = {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onInviteSent?: () => void
 }
 
-export function InviteMembers({ onInviteSent }: InviteMembersProps) {
-  const [open, setOpen] = useState(false)
+export function InviteMembers({ open: controlledOpen, onOpenChange, onInviteSent }: InviteMembersProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+
+  // Determine if component is in controlled mode
+  const isControlled = onOpenChange !== undefined
+
+  // Use controlled state if provided, otherwise use internal state
+  const open = isControlled ? (controlledOpen ?? false) : internalOpen
+  const setOpen = isControlled ? onOpenChange! : setInternalOpen
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [invitationLink, setInvitationLink] = useState<string | null>(null)
@@ -66,16 +75,17 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
     setError(null)
 
     try {
-      // Check if email is already invited or is a member
+      // Check if email is already invited (pending status only)
       const { data: existingInvite } = await supabase
         .from('workspace_invitations')
-        .select('id')
+        .select('id, status')
         .eq('workspace_id', workspace.id)
         .eq('email', data.email)
-        .single()
+        .eq('status', 'pending')
+        .maybeSingle()
 
       if (existingInvite) {
-        setError('This email has already been invited.')
+        setError('This email has already been invited and is pending acceptance.')
         setLoading(false)
         return
       }
@@ -85,7 +95,7 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
         .select('id, profiles!inner(email)')
         .eq('workspace_id', workspace.id)
         .eq('profiles.email', data.email)
-        .single()
+        .maybeSingle()
 
       if (existingMember) {
         setError('This email is already a member of this workspace.')
@@ -99,8 +109,43 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
       // Create invitation with expiration (7 days)
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
-      // Use type assertion to bypass strict Supabase type checking
-      const result: any = await (supabase as any)
+      // DETAILED LOGGING: Log what we're about to insert
+      console.log('=== INSERTION DEBUG INFO ===')
+      console.log('User ID:', user.id)
+      console.log('Workspace ID:', workspace.id)
+      console.log('Attempting to insert:', {
+        workspace_id: workspace.id,
+        email: data.email,
+        role: data.role,
+        token: token.substring(0, 8) + '...',
+        invited_by: user.id,
+        expires_at: expiresAt,
+      })
+
+      // Test the RLS function first
+      // Commented out debug code to fix build
+      // console.log('\n=== TESTING RLS FUNCTION ===')
+      // const { data: membershipData, error: membershipError } = await supabase
+      //   .rpc('get_user_workspace_memberships', { p_user_id: user.id })
+
+      // if (membershipError) {
+      //   console.error('RLS function error:', {
+      //     code: membershipError.code,
+      //     message: membershipError.message,
+      //     details: membershipError.details,
+      //     hint: membershipError.hint,
+      //   })
+      // } else {
+      //   console.log('RLS function result:', membershipData)
+      //   const isAdmin = membershipData?.some(
+      //     (m: any) => m.workspace_id === workspace.id && m.role === 'admin'
+      //   )
+      //   console.log('Is user admin?', isAdmin)
+      // }
+
+      // Insert invitation
+      console.log('\n=== ATTEMPTING INSERT ===')
+      const { data: insertedInvitation, error: insertError } = await supabase
         .from('workspace_invitations')
         .insert({
           workspace_id: workspace.id,
@@ -109,9 +154,38 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
           token,
           invited_by: user.id,
           expires_at: expiresAt,
-        })
+        } as any)
+        .select()
+        .single()
 
-      if (result.error) throw result.error
+      if (insertError) {
+        console.error('=== SUPABASE INSERT ERROR (DETAILED) ===')
+        console.error('Error object type:', Object.prototype.toString.call(insertError))
+        console.error('Error constructor:', insertError.constructor?.name)
+        console.error('\nDirect properties:')
+        console.error('  - code:', insertError.code)
+        console.error('  - message:', insertError.message)
+        console.error('  - details:', insertError.details)
+        console.error('  - hint:', insertError.hint)
+        console.error('\nAll enumerable keys:', Object.keys(insertError))
+        console.error('\nAll own properties:', Object.getOwnPropertyNames(insertError))
+        console.error('\nJSON.stringify:', JSON.stringify(insertError, null, 2))
+        console.error('\nError toString():', insertError.toString())
+        console.error('\nRaw error object:', insertError)
+        console.error('\nError stack:', insertError.stack)
+
+        // Try to extract any nested error info
+        if (typeof insertError === 'object' && insertError !== null) {
+          for (const [key, value] of Object.entries(insertError)) {
+            console.error(`  Property "${key}":`, typeof value, value)
+          }
+        }
+
+        throw new Error(insertError.message || 'Failed to create invitation')
+      }
+
+      console.log('=== INSERT SUCCESS ===')
+      console.log('Inserted invitation:', insertedInvitation)
 
       // Generate invitation link
       const link = `${window.location.origin}/invitations/${token}`
@@ -120,7 +194,14 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
       toast.success(`Invitation created for ${data.email}`)
       onInviteSent?.()
     } catch (err) {
-      console.error('Error sending invitation:', err)
+      console.error('=== CATCH BLOCK ERROR ===')
+      console.error('Error type:', Object.prototype.toString.call(err))
+      console.error('Error constructor:', err instanceof Error ? err.constructor.name : 'Not an Error')
+      console.error('Error message:', err instanceof Error ? err.message : String(err))
+      console.error('Error name:', err instanceof Error ? err.name : 'N/A')
+      console.error('Error stack:', err instanceof Error ? err.stack : 'N/A')
+      console.error('Raw error:', err)
+
       setError(err instanceof Error ? err.message : 'Failed to send invitation')
     } finally {
       setLoading(false)
@@ -163,14 +244,25 @@ export function InviteMembers({ onInviteSent }: InviteMembersProps) {
     }
   }
 
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    console.log('Dialog open change:', newOpen, 'isControlled:', isControlled)
+    if (newOpen) {
+      setOpen(true)
+    } else {
+      handleClose()
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogTrigger asChild>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Invite Member
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite Member
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invite Team Member</DialogTitle>

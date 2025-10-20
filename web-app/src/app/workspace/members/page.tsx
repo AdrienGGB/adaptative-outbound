@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher'
+import { AppShell } from '@/components/layout/app-shell'
 import { MembersTable } from '@/components/workspace/members-table'
 import { InviteMembers } from '@/components/workspace/invite-members'
-import { ArrowLeft, LogOut } from 'lucide-react'
 import type { MemberWithProfile } from '@/types/auth'
 
 export default function MembersPage() {
@@ -25,13 +23,19 @@ export default function MembersPage() {
     setLoadingMembers(true)
     const { data } = await supabase
       .from('workspace_members')
-      .select('*, profiles(*)')
+      .select('*, profiles(id, first_name, last_name, email, avatar_url, status, created_at, updated_at)')
       .eq('workspace_id', workspace.id)
       .eq('status', 'active')
       .order('joined_at', { ascending: false })
 
     if (data) {
-      setMembers(data as unknown as MemberWithProfile[])
+      // Transform the data: Supabase returns 'profiles' (plural) but our type expects 'profile' (singular)
+      const transformedMembers = data.map((member: any) => ({
+        ...member,
+        profile: Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+      })) as MemberWithProfile[]
+
+      setMembers(transformedMembers)
     }
     setLoadingMembers(false)
   }
@@ -40,19 +44,16 @@ export default function MembersPage() {
     fetchMembers()
   }, [workspace])
 
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/login')
-  }
-
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+      <AppShell>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">Loading...</p>
+          </div>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
@@ -62,38 +63,10 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">Adaptive Outbound</h1>
-            <WorkspaceSwitcher />
-          </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/workspace')}
-              className="mb-2"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Workspace
-            </Button>
-            <h2 className="text-3xl font-bold">Team Members</h2>
-            <p className="text-muted-foreground">
-              Manage your workspace members and roles
-            </p>
-          </div>
-          {role === 'admin' && <InviteMembers onInviteSent={fetchMembers} />}
-        </div>
+    <AppShell
+      actions={role === 'admin' ? <InviteMembers onInviteSent={fetchMembers} /> : undefined}
+    >
+      <div className="container mx-auto px-4 py-8">
 
         <Card>
           <CardHeader>
@@ -112,7 +85,7 @@ export default function MembersPage() {
             )}
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }

@@ -6,12 +6,12 @@ import { useForm } from 'react-hook-form'
 import { useAuth } from '@/lib/auth/auth-context'
 import { createClientRaw } from '@/lib/supabase/client-raw'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AppShell } from '@/components/layout/app-shell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { WorkspaceSwitcher } from '@/components/workspace/workspace-switcher'
-import { ArrowLeft, LogOut, AlertCircle, Trash2 } from 'lucide-react'
+import { AlertCircle, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 type WorkspaceSettingsForm = {
@@ -105,12 +105,14 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
+      <AppShell>
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+            <p className="mt-4 text-muted-foreground">Loading...</p>
+          </div>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
@@ -121,52 +123,29 @@ export default function SettingsPage() {
 
   if (role !== 'admin') {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              Only workspace administrators can access settings.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push('/workspace')} className="w-full">
-              Back to Workspace
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <AppShell>
+        <div className="flex min-h-screen items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Access Denied</CardTitle>
+              <CardDescription>
+                Only workspace administrators can access settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => router.push('/workspace')} className="w-full">
+                Back to Workspace
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="border-b bg-white dark:bg-gray-800">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold">Adaptive Outbound</h1>
-            <WorkspaceSwitcher />
-          </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/workspace')}
-            className="mb-2"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Workspace
-          </Button>
-          <h2 className="text-3xl font-bold">Workspace Settings</h2>
-          <p className="text-muted-foreground">Manage your workspace configuration</p>
-        </div>
+    <AppShell>
+      <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-2xl space-y-6">
           <Card>
@@ -241,7 +220,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   )
 }
