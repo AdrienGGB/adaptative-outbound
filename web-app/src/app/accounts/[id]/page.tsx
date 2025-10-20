@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Mail,
   Phone,
+  Sparkles,
 } from "lucide-react"
 import {
   Dialog,
@@ -48,6 +49,7 @@ export default function AccountDetailPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [createContactDialogOpen, setCreateContactDialogOpen] = useState(false)
   const [logActivityDialogOpen, setLogActivityDialogOpen] = useState(false)
+  const [enriching, setEnriching] = useState(false)
 
   const accountId = params.id as string
 
@@ -112,6 +114,43 @@ export default function AccountDetailPage() {
       // Also refresh account to update activity_count and last_activity_at
       const accountData = await getAccount(accountId)
       setAccount(accountData)
+    }
+  }
+
+  const handleEnrich = async () => {
+    if (!workspace || !account) return
+
+    try {
+      setEnriching(true)
+
+      // Create enrichment job
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: workspace.id,
+          job_type: 'enrich_account',
+          payload: {
+            account_id: account.id,
+            account_name: account.name,
+            domain: account.domain,
+          },
+          priority: 5,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create enrichment job')
+      }
+
+      const job = await response.json()
+
+      // Navigate to job detail page
+      router.push(`/jobs/${job.id}`)
+    } catch (error) {
+      console.error('Failed to create enrichment job:', error)
+    } finally {
+      setEnriching(false)
     }
   }
 
@@ -202,6 +241,10 @@ export default function AccountDetailPage() {
               {account.lifecycle_stage}
             </Badge>
           )}
+          <Button onClick={handleEnrich} disabled={enriching} variant="outline">
+            <Sparkles className="mr-2 h-4 w-4" />
+            {enriching ? 'Enriching...' : 'Enrich'}
+          </Button>
           <Button onClick={() => setEditDialogOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
             Edit

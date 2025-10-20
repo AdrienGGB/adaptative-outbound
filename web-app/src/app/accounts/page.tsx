@@ -16,9 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Filter } from "lucide-react"
+import { Search, Filter, Sparkles, X } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
+import { Badge } from "@/components/ui/badge"
 
 export default function AccountsPage() {
   const { workspace, loading: authLoading } = useAuth()
@@ -29,6 +30,8 @@ export default function AccountsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [lifecycleFilter, setLifecycleFilter] = useState<string>("all")
   const [tierFilter, setTierFilter] = useState<string>("all")
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set())
+  const [enriching, setEnriching] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -79,6 +82,67 @@ export default function AccountsPage() {
     fetchAccounts()
   }, [workspace, searchQuery, statusFilter, lifecycleFilter, tierFilter])
 
+  const handleSelectAll = () => {
+    if (selectedAccounts.size === accounts.length) {
+      setSelectedAccounts(new Set())
+    } else {
+      setSelectedAccounts(new Set(accounts.map(a => a.id)))
+    }
+  }
+
+  const handleSelectAccount = (accountId: string) => {
+    const newSelection = new Set(selectedAccounts)
+    if (newSelection.has(accountId)) {
+      newSelection.delete(accountId)
+    } else {
+      newSelection.add(accountId)
+    }
+    setSelectedAccounts(newSelection)
+  }
+
+  const handleBulkEnrich = async () => {
+    if (!workspace || selectedAccounts.size === 0) return
+
+    try {
+      setEnriching(true)
+
+      // Get selected account data
+      const selectedAccountData = accounts.filter(a => selectedAccounts.has(a.id))
+
+      // Create enrichment jobs for all selected accounts
+      const jobPromises = selectedAccountData.map(account =>
+        fetch('/api/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workspace_id: workspace.id,
+            job_type: 'enrich_account',
+            payload: {
+              account_id: account.id,
+              account_name: account.name,
+              domain: account.domain,
+            },
+            status: 'pending',
+          }),
+        })
+      )
+
+      await Promise.all(jobPromises)
+
+      // Clear selection and navigate to jobs page
+      setSelectedAccounts(new Set())
+      router.push('/jobs')
+    } catch (error) {
+      console.error('Failed to create enrichment jobs:', error)
+    } finally {
+      setEnriching(false)
+    }
+  }
+
+  const handleClearSelection = () => {
+    setSelectedAccounts(new Set())
+  }
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -96,7 +160,35 @@ export default function AccountsPage() {
 
   return (
     <AppShell
-      actions={<CreateAccountDialog workspaceId={workspace.id} />}
+      actions={
+        <div className="flex items-center gap-2">
+          {selectedAccounts.size > 0 && (
+            <>
+              <Badge variant="secondary" className="text-sm">
+                {selectedAccounts.size} selected
+              </Badge>
+              <Button
+                onClick={handleBulkEnrich}
+                disabled={enriching}
+                size="sm"
+                variant="default"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                {enriching ? 'Creating Jobs...' : `Enrich ${selectedAccounts.size}`}
+              </Button>
+              <Button
+                onClick={handleClearSelection}
+                size="sm"
+                variant="ghost"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear
+              </Button>
+            </>
+          )}
+          <CreateAccountDialog workspaceId={workspace.id} />
+        </div>
+      }
     >
       <div className="container mx-auto px-4 py-8">
         {/* Search and Filters */}
@@ -184,9 +276,20 @@ export default function AccountsPage() {
 
         {/* Results Count */}
         {!loading && (
-          <div className="mb-4 text-sm text-muted-foreground">
-            {accounts.length} {accounts.length === 1 ? "account" : "accounts"}{" "}
-            found
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {accounts.length} {accounts.length === 1 ? "account" : "accounts"}{" "}
+              found
+            </div>
+            {accounts.length > 0 && (
+              <Button
+                onClick={handleSelectAll}
+                variant="ghost"
+                size="sm"
+              >
+                {selectedAccounts.size === accounts.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            )}
           </div>
         )}
 
@@ -200,7 +303,11 @@ export default function AccountsPage() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : (
-          <AccountsTable accounts={accounts} />
+          <AccountsTable
+            accounts={accounts}
+            selectedAccounts={selectedAccounts}
+            onSelectAccount={handleSelectAccount}
+          />
         )}
       </div>
     </AppShell>

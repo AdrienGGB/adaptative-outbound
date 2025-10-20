@@ -87,21 +87,39 @@ export function Sidebar({ className }: SidebarProps) {
                   const badgeCount = item.badge ? counts[item.badge.key] : undefined
 
                   return (
-                    <SidebarNavItem
-                      key={item.href}
-                      href={item.href}
-                      icon={item.icon}
-                      label={item.label}
-                      badge={
-                        item.badge && badgeCount !== undefined
-                          ? {
-                              count: badgeCount,
-                              variant: item.badge.variant
-                            }
-                          : undefined
-                      }
-                      collapsed={collapsed}
-                    />
+                    <div key={item.href}>
+                      <SidebarNavItem
+                        href={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        badge={
+                          item.badge && badgeCount !== undefined
+                            ? {
+                                count: badgeCount,
+                                variant: item.badge.variant
+                              }
+                            : undefined
+                        }
+                        collapsed={collapsed}
+                        hasChildren={!!item.children}
+                      />
+
+                      {/* Render children if they exist and sidebar is not collapsed */}
+                      {item.children && !collapsed && (
+                        <div className="ml-6 mt-0.5 space-y-0.5 border-l border-border/50 pl-3">
+                          {item.children.map((child) => (
+                            <SidebarNavItem
+                              key={child.href}
+                              href={child.href}
+                              icon={child.icon}
+                              label={child.label}
+                              collapsed={false}
+                              isChild
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )
                 })}
               </div>

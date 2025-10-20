@@ -21,6 +21,7 @@ export interface NavItem {
     variant?: 'default' | 'secondary' | 'destructive'
   }
   matchPattern?: RegExp // For active state matching
+  children?: NavItem[] // For nested items
 }
 
 export interface NavSection {
@@ -88,10 +89,10 @@ export const navigationSections: NavSection[] = [
     name: 'WORKSPACE',
     items: [
       {
-        label: 'Settings',
-        href: '/workspace/settings',
-        icon: Settings,
-        matchPattern: /^\/workspace\/settings/
+        label: 'Jobs',
+        href: '/jobs',
+        icon: ListChecks,
+        matchPattern: /^\/jobs/
       },
       {
         label: 'Team Members',
@@ -100,16 +101,24 @@ export const navigationSections: NavSection[] = [
         matchPattern: /^\/workspace\/members/
       },
       {
-        label: 'Integrations',
-        href: '/workspace/settings/api',
-        icon: Plug,
-        matchPattern: /^\/workspace\/settings\/api/
-      },
-      {
-        label: 'Jobs',
-        href: '/workspace/jobs',
-        icon: ListChecks,
-        matchPattern: /^\/workspace\/jobs/
+        label: 'Settings',
+        href: '/workspace/settings',
+        icon: Settings,
+        matchPattern: /^\/workspace\/settings/,
+        children: [
+          {
+            label: 'General',
+            href: '/workspace/settings',
+            icon: Settings,
+            matchPattern: /^\/workspace\/settings$/
+          },
+          {
+            label: 'Integrations',
+            href: '/workspace/settings/api',
+            icon: Plug,
+            matchPattern: /^\/workspace\/settings\/api/
+          }
+        ]
       }
     ]
   }

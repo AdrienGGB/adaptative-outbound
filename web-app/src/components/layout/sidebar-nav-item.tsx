@@ -16,6 +16,8 @@ interface SidebarNavItemProps {
   }
   collapsed?: boolean
   disabled?: boolean
+  hasChildren?: boolean
+  isChild?: boolean
 }
 
 export function SidebarNavItem({
@@ -24,7 +26,9 @@ export function SidebarNavItem({
   label,
   badge,
   collapsed = false,
-  disabled = false
+  disabled = false,
+  hasChildren = false,
+  isChild = false
 }: SidebarNavItemProps) {
   const pathname = usePathname()
 
@@ -46,7 +50,8 @@ export function SidebarNavItem({
           'before:w-0.5 before:bg-sidebar-primary before:rounded-full'
         ],
         disabled && 'pointer-events-none opacity-50',
-        collapsed && 'justify-center px-2'
+        collapsed && 'justify-center px-2',
+        isChild && 'text-xs py-1.5'
       )}
       aria-current={isActive ? 'page' : undefined}
       aria-disabled={disabled}
@@ -54,6 +59,7 @@ export function SidebarNavItem({
       <Icon className={cn(
         'h-4 w-4 flex-shrink-0 transition-colors duration-200',
         collapsed && 'h-5 w-5',
+        isChild && 'h-3.5 w-3.5',
         isActive && 'text-sidebar-primary'
       )} />
 
