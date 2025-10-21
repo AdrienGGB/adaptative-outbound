@@ -6,6 +6,7 @@ import { getContacts, searchContacts, deleteContact } from "@/services"
 import type { Contact, ContactFilters } from "@/types"
 import { ContactsTable } from "@/components/contacts/contacts-table"
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog"
+import { ImportCsvDialog } from "@/components/import/import-csv-dialog"
 import { AppShell } from "@/components/layout/app-shell"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Filter, X, Trash2 } from "lucide-react"
+import { Search, Filter, X, Trash2, Upload } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
@@ -44,6 +45,7 @@ export default function ContactsPage() {
   const [createContactOpen, setCreateContactOpen] = useState(false)
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -212,6 +214,14 @@ export default function ContactsPage() {
               </Button>
             </>
           )}
+          <Button
+            onClick={() => setImportDialogOpen(true)}
+            size="sm"
+            variant="outline"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
           <Button onClick={() => setCreateContactOpen(true)}>
             New Contact
           </Button>
@@ -359,6 +369,14 @@ export default function ContactsPage() {
           />
         )}
       </div>
+
+      {/* Import CSV Dialog */}
+      <ImportCsvDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        entityType="contacts"
+        workspaceId={workspace.id}
+      />
     </AppShell>
   )
 }

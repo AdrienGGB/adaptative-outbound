@@ -6,6 +6,7 @@ import { getAccounts, searchAccounts, deleteAccount } from "@/services"
 import type { Account, AccountFilters } from "@/types"
 import { AccountsTable } from "@/components/accounts/accounts-table"
 import { CreateAccountDialog } from "@/components/accounts/create-account-dialog"
+import { ImportCsvDialog } from "@/components/import/import-csv-dialog"
 import { AppShell } from "@/components/layout/app-shell"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Filter, Sparkles, X, Trash2 } from "lucide-react"
+import { Search, Filter, Sparkles, X, Trash2, Upload } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +45,7 @@ export default function AccountsPage() {
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set())
   const [enriching, setEnriching] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -260,6 +262,14 @@ export default function AccountsPage() {
               </Button>
             </>
           )}
+          <Button
+            onClick={() => setImportDialogOpen(true)}
+            size="sm"
+            variant="outline"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
           <CreateAccountDialog workspaceId={workspace.id} />
         </div>
       }
@@ -384,6 +394,14 @@ export default function AccountsPage() {
           />
         )}
       </div>
+
+      {/* Import CSV Dialog */}
+      <ImportCsvDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        entityType="accounts"
+        workspaceId={workspace.id}
+      />
     </AppShell>
   )
 }

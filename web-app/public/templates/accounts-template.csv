@@ -1,0 +1,4 @@
+Account Name,Domain,Industry,Description,Website,Company Size,Annual Revenue,Location,Lifecycle Stage,Account Tier,Status
+Acme Corporation,acme.com,Technology,Leading provider of enterprise software solutions,https://acme.com,500,50000000,San Francisco CA USA,target,enterprise,active
+Globex Industries,globex.com,Manufacturing,Global manufacturing and distribution company,https://globex.com,1000,100000000,New York NY USA,engaged,enterprise,active
+Initech Software,initech.com,Technology,Mid-market software development firm,https://initech.com,250,25000000,Austin TX USA,opportunity,mid-market,active

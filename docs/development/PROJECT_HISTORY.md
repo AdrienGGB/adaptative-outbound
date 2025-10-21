@@ -1,5 +1,211 @@
 # Project History
 
+## 2025-10-21 - Feature: CSV Import System (F044-A)
+
+### Overview
+Implemented comprehensive CSV import functionality for Accounts and Contacts with intelligent column mapping, batch processing, real-time progress tracking, and error reporting. This is the first major component of the F044 Data Pipeline feature.
+
+### Implementation Details
+
+#### Architecture Components
+
+**1. Type System** (`web-app/src/types/import.ts`)
+- **Entity types:** Support for accounts, contacts, and tasks (extensible)
+- **Field definitions:** Complete metadata for all importable fields
+  - Accounts: 11 fields (name, domain, industry, description, website, company_size, annual_revenue, location, lifecycle_stage, account_tier, status)
+  - Contacts: 11 fields (first_name, last_name, email, phone, job_title, department, seniority_level, linkedin_url, location, status)
+- **Auto-detection logic:** Fuzzy matching algorithm for intelligent column mapping
+  - Matches exact names, normalized names (lowercase, no spaces/underscores)
+  - Checks field labels and common aliases
+- **Progress tracking:** Real-time job progress with batch, percentage, and error tracking
+- **Validation types:** Row validation with error collection
+
+**2. CSV Parser Utility** (`web-app/src/lib/csv-parser.ts`)
+- **File parsing:** parseCSVFile() for browser File objects using papaparse
+- **URL parsing:** parseCSVFromURL() for server-side processing from Supabase Storage
+- **Validation:** validateRow() and validateBatch() with type coercion
+  - Email validation with regex
+  - URL validation and normalization
+  - Number parsing and validation
+  - Boolean conversion (true/false, yes/no, 1/0)
+  - Date parsing with ISO 8601 support
+- **Template generation:** generateCSVTemplate() and downloadCSVTemplate()
+- **Batch processing:** batchArray() utility for splitting large datasets
+- **Configuration:** Handles headers, skip empty lines, type detection
+
+**3. File Upload API** (`web-app/src/app/api/upload/csv/route.ts`)
+- **Endpoint:** POST /api/upload/csv?workspace_id={id}
+- **Storage:** Uploads to Supabase Storage bucket 'csv-imports'
+- **Validation:**
+  - Max file size: 10MB
+  - Allowed types: text/csv, application/vnd.ms-excel, text/plain
+- **Security:** Workspace-scoped with authentication check
+- **Response:** Returns file URL, path, and metadata
+
+**4. Import Job Worker** (`web-app/src/app/api/workers/import-csv/route.ts`)
+- **Endpoint:** POST /api/workers/import-csv?job_id={id}
+- **Processing flow:**
+  1. Fetch job from database
+  2. Update status to 'processing'
+  3. Parse CSV from Supabase Storage URL
+  4. Split data into batches (100 rows per batch)
+  5. Validate each batch with error collection
+  6. Import valid rows using bulkCreateAccounts() or bulkCreateContacts()
+  7. Update progress after each batch
+  8. Mark job as completed with results
+- **Error handling:**
+  - Row-level validation errors
+  - Batch import errors
+  - Complete error log (limited to first 100 errors)
+- **Progress updates:** Real-time job.progress updates visible to frontend
+
+**5. UI Components**
+
+**ImportCsvDialog** (`web-app/src/components/import/import-csv-dialog.tsx`)
+- **Multi-step wizard:**
+  - Step 1: File upload with drag-drop interface
+  - Step 2: Column mapping with preview
+  - Step 3: Import progress with real-time updates
+- **Features:**
+  - CSV parsing and preview (first 5 rows)
+  - Auto-detected column mappings
+  - Template download button
+  - File validation and metadata display
+  - Creates import job and triggers worker
+  - Auto-refresh on completion
+
+**ColumnMapping** (`web-app/src/components/import/column-mapping.tsx`)
+- **Interactive mapping table:**
+  - Shows CSV column name
+  - Preview of first value
+  - Dropdown to select database field
+  - Required field indicators
+- **Validation:**
+  - Tracks required fields completion
+  - Shows progress badge
+  - Prevents submission until all required fields mapped
+- **Preview table:** Shows mapped data for first 5 rows
+
+**ImportProgress** (`web-app/src/components/import/import-progress.tsx`)
+- **Real-time polling:** Updates every 2 seconds
+- **Visual indicators:**
+  - Animated spinner for processing
+  - CheckCircle for completed
+  - XCircle for failed
+- **Progress display:**
+  - Progress bar with percentage
+  - Stats cards (successful/failed/total)
+  - Current batch and message
+- **Error reporting:**
+  - Scrollable error list (first 50 displayed)
+  - Download full error report as CSV
+  - Shows row, column, and error message
+- **Action buttons:** Done, Close, Try Again
+
+#### Page Integration
+
+**Accounts Page** (`web-app/src/app/accounts/page.tsx`)
+- Added "Import" button in actions section (Upload icon)
+- Opens ImportCsvDialog with entityType="accounts"
+- Positioned next to "Create Account" button
+
+**Contacts Page** (`web-app/src/app/contacts/page.tsx`)
+- Added "Import" button in actions section (Upload icon)
+- Opens ImportCsvDialog with entityType="contacts"
+- Positioned next to "New Contact" button
+
+#### CSV Templates
+- **Location:** `/web-app/public/templates/`
+- **Files:**
+  - `accounts-template.csv` - 3 sample rows with all fields
+  - `contacts-template.csv` - 3 sample rows with all fields
+- **Usage:** Users can download these via "Download Template" button in import dialog
+
+### Technical Achievements
+
+**1. Smart Column Mapping**
+- Automatically detects CSV column mappings using fuzzy matching
+- Handles common naming variations (spaces, underscores, case differences)
+- Reduces user effort for standard import formats
+
+**2. Batch Processing**
+- Processes 100 rows at a time to avoid timeouts
+- Updates progress after each batch
+- Continues processing even if some batches fail
+
+**3. Data Validation**
+- Type-safe validation with proper type coercion
+- Email format validation
+- URL normalization
+- Number and boolean parsing
+- Collects all errors for user review
+
+**4. User Experience**
+- Multi-step wizard reduces complexity
+- Real-time progress updates
+- Clear error reporting with downloadable reports
+- Preview before import
+- Template downloads for guidance
+
+**5. Scalability**
+- Handles large files (up to 10MB)
+- Batch processing prevents timeouts
+- Background job system for async processing
+- Efficient progress tracking
+
+### Files Created
+1. **Types:**
+   - `web-app/src/types/import.ts` (283 lines)
+
+2. **Utilities:**
+   - `web-app/src/lib/csv-parser.ts` (320 lines)
+
+3. **API Routes:**
+   - `web-app/src/app/api/upload/csv/route.ts` (87 lines)
+   - `web-app/src/app/api/workers/import-csv/route.ts` (187 lines)
+
+4. **Components:**
+   - `web-app/src/components/import/import-csv-dialog.tsx` (292 lines)
+   - `web-app/src/components/import/column-mapping.tsx` (211 lines)
+   - `web-app/src/components/import/import-progress.tsx` (221 lines)
+
+5. **Templates:**
+   - `web-app/public/templates/accounts-template.csv`
+   - `web-app/public/templates/contacts-template.csv`
+
+### Files Modified
+1. **Accounts Page:**
+   - `web-app/src/app/accounts/page.tsx` - Added Import button and dialog
+
+2. **Contacts Page:**
+   - `web-app/src/app/contacts/page.tsx` - Added Import button and dialog
+
+3. **Dependencies:**
+   - `web-app/package.json` - Added papaparse and @types/papaparse
+
+### Dependencies Added
+- **papaparse:** CSV parsing library with robust error handling
+- **@types/papaparse:** TypeScript type definitions for papaparse
+
+### Future Enhancements (F044 Roadmap)
+- **CSV/Excel Export:** Export accounts, contacts, tasks to CSV
+- **Contact Enrichment Jobs:** Apollo.io integration for data enrichment
+- **Jobs Dashboard:** Monitor and manage all background jobs
+- **Rate Limiting:** Track and enforce API rate limits
+- **Workspace API Settings:** Manage API keys and configurations
+- **Bulk Operations:** Additional bulk actions for imported data
+
+### Testing Recommendations
+1. Test with valid CSV files matching template format
+2. Test with mismatched columns requiring manual mapping
+3. Test with invalid data (bad emails, malformed URLs)
+4. Test with large files (thousands of rows)
+5. Test error handling and error report download
+6. Verify job status updates in real-time
+7. Test template downloads work correctly
+
+---
+
 ## 2025-10-21 - Feature: Complete Delete Functionality for All Entities
 
 ### Overview
