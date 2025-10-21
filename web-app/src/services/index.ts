@@ -37,6 +37,7 @@ export {
   getActivity,
   getActivities,
   updateActivity,
+  deleteActivity,
   getAccountTimeline,
   getContactTimeline,
   getWorkspaceTimeline,

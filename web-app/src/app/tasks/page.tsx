@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { getMyTasks, getOverdueTasks, getTasksDueToday, completeTask } from "@/services"
+import { getMyTasks, getOverdueTasks, getTasksDueToday, completeTask, deleteTask } from "@/services"
 import { Task, TaskStatus, TaskPriority } from "@/types"
 import { toast } from "sonner"
 import { AlertCircle, CheckCircle2, Clock, ListTodo } from "lucide-react"
@@ -83,6 +83,17 @@ export default function TasksPage() {
     } catch (error) {
       console.error("Failed to complete task:", error)
       toast.error("Failed to complete task")
+    }
+  }
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteTask(taskId)
+      toast.success("Task deleted!")
+      loadTasks()
+    } catch (error) {
+      console.error("Failed to delete task:", error)
+      toast.error("Failed to delete task")
     }
   }
 
@@ -256,6 +267,7 @@ export default function TasksPage() {
           <TaskList
             tasks={filteredAllTasks}
             onTaskComplete={handleCompleteTask}
+            onTaskDelete={handleDeleteTask}
             isLoading={isLoading}
           />
         </TabsContent>
@@ -264,6 +276,7 @@ export default function TasksPage() {
           <TaskList
             tasks={filteredOverdueTasks}
             onTaskComplete={handleCompleteTask}
+            onTaskDelete={handleDeleteTask}
             isLoading={isLoading}
           />
         </TabsContent>
@@ -272,6 +285,7 @@ export default function TasksPage() {
           <TaskList
             tasks={filteredTodayTasks}
             onTaskComplete={handleCompleteTask}
+            onTaskDelete={handleDeleteTask}
             isLoading={isLoading}
           />
         </TabsContent>
@@ -280,6 +294,7 @@ export default function TasksPage() {
           <TaskList
             tasks={filteredUpcomingTasks}
             onTaskComplete={handleCompleteTask}
+            onTaskDelete={handleDeleteTask}
             isLoading={isLoading}
           />
         </TabsContent>

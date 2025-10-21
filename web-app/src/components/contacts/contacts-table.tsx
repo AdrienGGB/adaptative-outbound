@@ -10,14 +10,17 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
 import { Building2, Mail, Phone, Crown, Award } from "lucide-react"
 
 interface ContactsTableProps {
   contacts: Contact[]
+  selectedContacts?: Set<string>
+  onSelectContact?: (contactId: string) => void
 }
 
-export function ContactsTable({ contacts }: ContactsTableProps) {
+export function ContactsTable({ contacts, selectedContacts = new Set(), onSelectContact }: ContactsTableProps) {
   const router = useRouter()
 
   const getStatusBadgeVariant = (
@@ -39,6 +42,15 @@ export function ContactsTable({ contacts }: ContactsTableProps) {
     }
   }
 
+  const handleRowClick = (contactId: string, e: React.MouseEvent) => {
+    // Don't navigate if clicking checkbox
+    const target = e.target as HTMLElement
+    if (target.closest('[data-checkbox]')) {
+      return
+    }
+    router.push(`/contacts/${contactId}`)
+  }
+
   if (contacts.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center">
@@ -52,6 +64,7 @@ export function ContactsTable({ contacts }: ContactsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectContact && <TableHead className="w-12"></TableHead>}
             <TableHead>Name</TableHead>
             <TableHead>Job Title</TableHead>
             <TableHead>Account</TableHead>
@@ -66,8 +79,16 @@ export function ContactsTable({ contacts }: ContactsTableProps) {
             <TableRow
               key={contact.id}
               className="cursor-pointer hover:bg-muted/50"
-              onClick={() => router.push(`/contacts/${contact.id}`)}
+              onClick={(e) => handleRowClick(contact.id, e)}
             >
+              {onSelectContact && (
+                <TableCell data-checkbox onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selectedContacts.has(contact.id)}
+                    onCheckedChange={() => onSelectContact(contact.id)}
+                  />
+                </TableCell>
+              )}
               <TableCell className="font-medium">
                 <div className="flex flex-col">
                   <span>{contact.full_name}</span>

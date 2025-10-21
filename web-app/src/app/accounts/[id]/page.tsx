@@ -7,6 +7,7 @@ import {
   getAccount,
   getAccountContacts,
   getAccountActivities,
+  deleteAccount,
 } from "@/services"
 import type { Account, Contact, Activity } from "@/types"
 import { AppShell } from "@/components/layout/app-shell"
@@ -26,6 +27,7 @@ import {
   Mail,
   Phone,
   Sparkles,
+  Trash2,
 } from "lucide-react"
 import {
   Dialog,
@@ -34,6 +36,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { AccountForm } from "@/components/accounts/account-form"
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog"
 import { LogActivityDialog } from "@/components/activities/log-activity-dialog"
@@ -50,6 +63,7 @@ export default function AccountDetailPage() {
   const [createContactDialogOpen, setCreateContactDialogOpen] = useState(false)
   const [logActivityDialogOpen, setLogActivityDialogOpen] = useState(false)
   const [enriching, setEnriching] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const accountId = params.id as string
 
@@ -154,6 +168,20 @@ export default function AccountDetailPage() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!account) return
+
+    try {
+      setDeleting(true)
+      await deleteAccount(account.id)
+      router.push('/accounts')
+    } catch (error) {
+      console.error('Failed to delete account:', error)
+      alert('Failed to delete account. Please try again.')
+      setDeleting(false)
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <AppShell>
@@ -245,10 +273,35 @@ export default function AccountDetailPage() {
             <Sparkles className="mr-2 h-4 w-4" />
             {enriching ? 'Enriching...' : 'Enrich'}
           </Button>
-          <Button onClick={() => setEditDialogOpen(true)}>
+          <Button onClick={() => setEditDialogOpen(true)} disabled={deleting}>
             <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                disabled={deleting || enriching}
+                variant="destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {account.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete this account and all associated data including {contacts.length} contacts, {activities.length} activities, and related tasks.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       }
     >

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth/auth-context"
-import { getAccounts, searchAccounts } from "@/services"
+import { getAccounts, searchAccounts, deleteAccount } from "@/services"
 import type { Account, AccountFilters } from "@/types"
 import { AccountsTable } from "@/components/accounts/accounts-table"
 import { CreateAccountDialog } from "@/components/accounts/create-account-dialog"
@@ -16,10 +16,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Filter, Sparkles, X } from "lucide-react"
+import { Search, Filter, Sparkles, X, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function AccountsPage() {
   const { workspace, loading: authLoading } = useAuth()
@@ -32,6 +43,7 @@ export default function AccountsPage() {
   const [tierFilter, setTierFilter] = useState<string>("all")
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set())
   const [enriching, setEnriching] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -143,6 +155,41 @@ export default function AccountsPage() {
     setSelectedAccounts(new Set())
   }
 
+  const handleBulkDelete = async () => {
+    if (!workspace || selectedAccounts.size === 0) return
+
+    try {
+      setDeleting(true)
+
+      // Delete all selected accounts
+      await Promise.all(
+        Array.from(selectedAccounts).map(accountId => deleteAccount(accountId))
+      )
+
+      // Clear selection and refresh data
+      setSelectedAccounts(new Set())
+
+      // Refresh the accounts list
+      const filters: AccountFilters = {
+        workspace_id: workspace.id,
+      }
+      if (statusFilter !== "all") filters.status = statusFilter as any
+      if (lifecycleFilter !== "all") filters.lifecycle_stage = lifecycleFilter as any
+      if (tierFilter !== "all") filters.account_tier = tierFilter as any
+
+      const data = searchQuery.trim()
+        ? await searchAccounts(workspace.id, searchQuery)
+        : await getAccounts(filters)
+
+      setAccounts(data)
+    } catch (error) {
+      console.error('Failed to delete accounts:', error)
+      alert('Failed to delete some accounts. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -169,17 +216,44 @@ export default function AccountsPage() {
               </Badge>
               <Button
                 onClick={handleBulkEnrich}
-                disabled={enriching}
+                disabled={enriching || deleting}
                 size="sm"
                 variant="default"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
                 {enriching ? 'Creating Jobs...' : `Enrich ${selectedAccounts.size}`}
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={deleting || enriching}
+                    size="sm"
+                    variant="destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {deleting ? 'Deleting...' : `Delete ${selectedAccounts.size}`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selectedAccounts.size} {selectedAccounts.size === 1 ? 'account' : 'accounts'}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the selected accounts and all associated data including contacts, activities, and tasks.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               <Button
                 onClick={handleClearSelection}
                 size="sm"
                 variant="ghost"
+                disabled={deleting || enriching}
               >
                 <X className="mr-2 h-4 w-4" />
                 Clear

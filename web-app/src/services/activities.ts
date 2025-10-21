@@ -212,6 +212,25 @@ export async function updateActivity(
   }
 }
 
+/**
+ * Delete an activity
+ */
+export async function deleteActivity(id: string): Promise<void> {
+  try {
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from('activities')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+  } catch (error) {
+    console.error('Failed to delete activity:', error)
+    throw new Error('Failed to delete activity')
+  }
+}
+
 // ============================================================================
 // TIMELINE QUERIES
 // ============================================================================

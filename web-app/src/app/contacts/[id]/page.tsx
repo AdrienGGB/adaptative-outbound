@@ -7,6 +7,7 @@ import {
   getContact,
   getContactActivities,
   getContactAccount,
+  deleteContact,
 } from "@/services"
 import type { Contact, Activity, Account } from "@/types"
 import { AppShell } from "@/components/layout/app-shell"
@@ -27,8 +28,20 @@ import {
   Crown,
   Award,
   BarChart3,
+  Trash2,
 } from "lucide-react"
 import Link from "next/link"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function ContactDetailPage() {
   const params = useParams()
@@ -39,6 +52,7 @@ export default function ContactDetailPage() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [logActivityOpen, setLogActivityOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const contactId = params.id as string
 
@@ -105,6 +119,20 @@ export default function ContactDetailPage() {
     }
   }
 
+  const handleDelete = async () => {
+    if (!contact) return
+
+    try {
+      setDeleting(true)
+      await deleteContact(contact.id)
+      router.push('/contacts')
+    } catch (error) {
+      console.error('Failed to delete contact:', error)
+      alert('Failed to delete contact. Please try again.')
+      setDeleting(false)
+    }
+  }
+
   if (authLoading || loading) {
     return (
       <AppShell>
@@ -130,7 +158,7 @@ export default function ContactDetailPage() {
       ]}
       actions={
         <div className="flex gap-2">
-          <Button onClick={() => setLogActivityOpen(true)}>
+          <Button onClick={() => setLogActivityOpen(true)} disabled={deleting}>
             Log Activity
           </Button>
           <LogActivityDialog
@@ -145,6 +173,31 @@ export default function ContactDetailPage() {
             contact={contact}
             onSuccess={refreshContact}
           />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                disabled={deleting}
+                variant="destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {deleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {contact.full_name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete this contact and all associated data including {activities.length} activities and related tasks.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       }
     >

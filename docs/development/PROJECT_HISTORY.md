@@ -1,5 +1,174 @@
 # Project History
 
+## 2025-10-21 - Feature: Complete Delete Functionality for All Entities
+
+### Overview
+Implemented comprehensive delete functionality across all main entity pages (Accounts, Contacts, Tasks, Activities) with both bulk deletion and individual item deletion capabilities.
+
+### Implementation Details
+
+#### 1. Accounts Page - Bulk Delete
+**File:** `web-app/src/app/accounts/page.tsx`
+
+- **Multi-select infrastructure:** Leveraged existing checkbox-based selection system
+- **Bulk delete button:** Appears when accounts are selected, shows count
+- **AlertDialog confirmation:** Warns about cascading deletes (contacts, activities, tasks)
+- **State management:** `selectedAccounts` Set for tracking selections
+- **Auto-refresh:** Reloads data after successful deletion
+- **Error handling:** Clear error messages if deletion fails
+
+#### 2. Account Detail Page - Individual Delete
+**File:** `web-app/src/app/accounts/[id]/page.tsx`
+
+- **Delete button:** Added to actions section with destructive variant
+- **Confirmation dialog:** Shows account name and count of associated data to be deleted
+- **Redirect behavior:** Returns to /accounts list after successful deletion
+- **Disabled state:** Prevents other actions during deletion
+
+#### 3. Contacts Page - Multi-Select & Bulk Delete
+**Files:**
+- `web-app/src/app/contacts/page.tsx`
+- `web-app/src/components/contacts/contacts-table.tsx`
+
+- **New multi-select system:** Added checkbox column to ContactsTable component
+- **Props interface:** Added `selectedContacts`, `onSelectContact` to ContactsTable
+- **Select All/Deselect All:** Toggle button for quick selection management
+- **Bulk actions bar:** Shows selected count badge, Delete and Clear buttons
+- **Row click handling:** Prevents navigation when clicking checkboxes
+- **Responsive:** Works on all screen sizes
+
+#### 4. Contact Detail Page - Individual Delete
+**File:** `web-app/src/app/contacts/[id]/page.tsx`
+
+- **Delete button:** Added with Trash2 icon in actions section
+- **Context-aware dialog:** Shows contact name and activity/task counts
+- **Redirect behavior:** Returns to /contacts list after deletion
+- **Button states:** Disabled during deletion, shows "Deleting..." text
+
+#### 5. Tasks Page - Delete Functionality
+**Files:**
+- `web-app/src/app/tasks/page.tsx`
+- `web-app/src/components/tasks/task-list.tsx`
+
+- **Delete icon button:** Added to each task card alongside Complete button
+- **Ghost variant:** Subtle delete button that doesn't overwhelm UI
+- **Applied to all tabs:** All, Overdue, Today, Upcoming task lists
+- **Toast notifications:** Success message after deletion
+- **Callback pattern:** `onTaskDelete` prop for handling deletions
+- **Auto-refresh:** Reloads tasks after deletion
+
+#### 6. Activities Service - Delete Function
+**Files:**
+- `web-app/src/services/activities.ts`
+- `web-app/src/services/index.ts`
+
+- **New function:** `deleteActivity(id: string): Promise<void>`
+- **Consistent pattern:** Follows same structure as other delete services
+- **Error handling:** Catches and logs errors appropriately
+- **Export:** Added to services index for global access
+
+### Design Patterns & Best Practices
+
+#### Confirmation Dialogs
+- **shadcn/ui AlertDialog:** Used consistently across all delete operations
+- **Clear warnings:** Explains that deletion is permanent and cannot be undone
+- **Context-specific messaging:** Shows what associated data will be deleted
+- **Destructive styling:** Red buttons for delete actions
+
+#### State Management
+- **Set-based selection:** Using `Set<string>` for efficient multi-select tracking
+- **Loading states:** `deleting` boolean prevents multiple simultaneous operations
+- **Optimistic updates:** Clear selections immediately after initiating delete
+
+#### User Experience
+- **Visual feedback:** Disabled buttons, loading text ("Deleting...")
+- **Count badges:** Show number of selected items
+- **Icon consistency:** Trash2 from lucide-react used everywhere
+- **Clear selection:** Easy way to deselect all items
+
+#### Database Integration
+- **CASCADE DELETE:** All foreign keys configured to automatically clean up child records
+- **Service layer:** All delete operations go through typed service functions
+- **Error boundaries:** Graceful error handling with user-friendly messages
+
+### Files Changed
+1. **Accounts:**
+   - `web-app/src/app/accounts/page.tsx` (modified - bulk delete)
+   - `web-app/src/app/accounts/[id]/page.tsx` (modified - individual delete)
+
+2. **Contacts:**
+   - `web-app/src/app/contacts/page.tsx` (modified - bulk delete & multi-select)
+   - `web-app/src/app/contacts/[id]/page.tsx` (modified - individual delete)
+   - `web-app/src/components/contacts/contacts-table.tsx` (modified - checkbox support)
+
+3. **Tasks:**
+   - `web-app/src/app/tasks/page.tsx` (modified - delete handler)
+   - `web-app/src/components/tasks/task-list.tsx` (modified - delete buttons)
+
+4. **Activities:**
+   - `web-app/src/services/activities.ts` (modified - new deleteActivity function)
+   - `web-app/src/services/index.ts` (modified - export deleteActivity)
+
+### Technical Notes
+
+**Multi-select Pattern:**
+```typescript
+const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+
+const handleSelectItem = (itemId: string) => {
+  const newSelection = new Set(selectedItems)
+  if (newSelection.has(itemId)) {
+    newSelection.delete(itemId)
+  } else {
+    newSelection.add(itemId)
+  }
+  setSelectedItems(newSelection)
+}
+```
+
+**Bulk Delete Pattern:**
+```typescript
+const handleBulkDelete = async () => {
+  if (!workspace || selectedItems.size === 0) return
+
+  try {
+    setDeleting(true)
+    await Promise.all(
+      Array.from(selectedItems).map(id => deleteItem(id))
+    )
+    setSelectedItems(new Set())
+    // Refresh data...
+  } catch (error) {
+    console.error('Failed to delete:', error)
+    alert('Failed to delete. Please try again.')
+  } finally {
+    setDeleting(false)
+  }
+}
+```
+
+### Build Status
+✅ TypeScript compilation successful
+✅ All pages compile without errors
+✅ Development server running on http://localhost:3000
+
+### Testing Recommendations
+1. Test bulk delete with 1 item, multiple items, and all items
+2. Verify cascade deletes properly remove associated data
+3. Test error handling when deletion fails
+4. Verify redirects work correctly on detail pages
+5. Check loading states and button disabled states
+6. Test on mobile viewports for responsive behavior
+
+### Future Enhancements
+- Add undo functionality for accidental deletions
+- Implement soft delete with recovery period
+- Add batch size limits for bulk operations
+- Show progress indicator for large bulk deletes
+- Add delete confirmation step for high-risk items
+
+---
+
 ## 2025-10-20 - Bug Fix: Workspace Deletion
 
 ### Issue

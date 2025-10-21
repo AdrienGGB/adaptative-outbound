@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth/auth-context"
-import { getContacts, searchContacts } from "@/services"
+import { getContacts, searchContacts, deleteContact } from "@/services"
 import type { Contact, ContactFilters } from "@/types"
 import { ContactsTable } from "@/components/contacts/contacts-table"
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog"
@@ -16,9 +16,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Filter } from "lucide-react"
+import { Search, Filter, X, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function ContactsPage() {
   const { workspace, loading: authLoading } = useAuth()
@@ -30,6 +42,8 @@ export default function ContactsPage() {
   const [departmentFilter, setDepartmentFilter] = useState<string>("all")
   const [seniorityFilter, setSeniorityFilter] = useState<string>("all")
   const [createContactOpen, setCreateContactOpen] = useState(false)
+  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -80,6 +94,63 @@ export default function ContactsPage() {
     fetchContacts()
   }, [workspace, searchQuery, statusFilter, departmentFilter, seniorityFilter])
 
+  const handleSelectAll = () => {
+    if (selectedContacts.size === contacts.length) {
+      setSelectedContacts(new Set())
+    } else {
+      setSelectedContacts(new Set(contacts.map(c => c.id)))
+    }
+  }
+
+  const handleSelectContact = (contactId: string) => {
+    const newSelection = new Set(selectedContacts)
+    if (newSelection.has(contactId)) {
+      newSelection.delete(contactId)
+    } else {
+      newSelection.add(contactId)
+    }
+    setSelectedContacts(newSelection)
+  }
+
+  const handleBulkDelete = async () => {
+    if (!workspace || selectedContacts.size === 0) return
+
+    try {
+      setDeleting(true)
+
+      // Delete all selected contacts
+      await Promise.all(
+        Array.from(selectedContacts).map(contactId => deleteContact(contactId))
+      )
+
+      // Clear selection and refresh data
+      setSelectedContacts(new Set())
+
+      // Refresh the contacts list
+      const filters: ContactFilters = {
+        workspace_id: workspace.id,
+      }
+      if (statusFilter !== "all") filters.status = statusFilter as any
+      if (departmentFilter !== "all") filters.department = departmentFilter as any
+      if (seniorityFilter !== "all") filters.seniority_level = seniorityFilter as any
+
+      const data = searchQuery.trim()
+        ? await searchContacts(searchQuery, workspace.id)
+        : await getContacts(filters)
+
+      setContacts(data)
+    } catch (error) {
+      console.error('Failed to delete contacts:', error)
+      alert('Failed to delete some contacts. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleClearSelection = () => {
+    setSelectedContacts(new Set())
+  }
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -98,7 +169,49 @@ export default function ContactsPage() {
   return (
     <AppShell
       actions={
-        <>
+        <div className="flex items-center gap-2">
+          {selectedContacts.size > 0 && (
+            <>
+              <Badge variant="secondary" className="text-sm">
+                {selectedContacts.size} selected
+              </Badge>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={deleting}
+                    size="sm"
+                    variant="destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {deleting ? 'Deleting...' : `Delete ${selectedContacts.size}`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selectedContacts.size} {selectedContacts.size === 1 ? 'contact' : 'contacts'}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the selected contacts and all associated data including activities and tasks.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button
+                onClick={handleClearSelection}
+                size="sm"
+                variant="ghost"
+                disabled={deleting}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear
+              </Button>
+            </>
+          )}
           <Button onClick={() => setCreateContactOpen(true)}>
             New Contact
           </Button>
@@ -107,7 +220,7 @@ export default function ContactsPage() {
             onOpenChange={setCreateContactOpen}
             workspaceId={workspace.id}
           />
-        </>
+        </div>
       }
     >
       <div className="container mx-auto px-4 py-8">
@@ -212,9 +325,20 @@ export default function ContactsPage() {
 
         {/* Results Count */}
         {!loading && (
-          <div className="mb-4 text-sm text-muted-foreground">
-            {contacts.length} {contacts.length === 1 ? "contact" : "contacts"}{" "}
-            found
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              {contacts.length} {contacts.length === 1 ? "contact" : "contacts"}{" "}
+              found
+            </div>
+            {contacts.length > 0 && (
+              <Button
+                onClick={handleSelectAll}
+                variant="ghost"
+                size="sm"
+              >
+                {selectedContacts.size === contacts.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            )}
           </div>
         )}
 
@@ -228,7 +352,11 @@ export default function ContactsPage() {
             <Skeleton className="h-12 w-full" />
           </div>
         ) : (
-          <ContactsTable contacts={contacts} />
+          <ContactsTable
+            contacts={contacts}
+            selectedContacts={selectedContacts}
+            onSelectContact={handleSelectContact}
+          />
         )}
       </div>
     </AppShell>
