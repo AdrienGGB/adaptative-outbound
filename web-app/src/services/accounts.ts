@@ -311,7 +311,8 @@ export async function updateAccount(
 }
 
 /**
- * Soft delete an account (set status to 'archived')
+ * Delete an account permanently
+ * Note: CASCADE DELETE will automatically remove all related records
  */
 export async function deleteAccount(id: string): Promise<void> {
   try {
@@ -319,7 +320,7 @@ export async function deleteAccount(id: string): Promise<void> {
 
     const { error } = await supabase
       .from('accounts')
-      .update({ status: 'archived' })
+      .delete()
       .eq('id', id)
 
     if (error) {

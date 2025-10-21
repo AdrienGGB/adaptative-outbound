@@ -259,7 +259,8 @@ export async function updateContact(
 }
 
 /**
- * Soft delete a contact (set status to 'archived')
+ * Delete a contact permanently
+ * Note: CASCADE DELETE will automatically remove all related records
  */
 export async function deleteContact(id: string): Promise<void> {
   try {
@@ -267,7 +268,7 @@ export async function deleteContact(id: string): Promise<void> {
 
     const { error } = await supabase
       .from('contacts')
-      .update({ status: 'archived' })
+      .delete()
       .eq('id', id)
 
     if (error) throw error

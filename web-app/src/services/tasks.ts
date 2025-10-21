@@ -241,7 +241,8 @@ export async function updateTask(id: string, data: TaskUpdate): Promise<Task> {
 }
 
 /**
- * Delete a task (hard delete)
+ * Delete a task permanently
+ * Note: CASCADE DELETE will automatically remove all related records
  */
 export async function deleteTask(id: string): Promise<void> {
   try {
