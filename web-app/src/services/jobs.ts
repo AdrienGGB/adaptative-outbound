@@ -113,6 +113,20 @@ export async function getJobs(
 }
 
 /**
+ * Get a single job by ID (simple version for polling)
+ */
+export async function getJob(jobId: string): Promise<Job> {
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('*')
+    .eq('id', jobId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Get a single job by ID with its logs
  */
 export async function getJobById(jobId: string): Promise<{ job: Job; logs: JobLog[] }> {

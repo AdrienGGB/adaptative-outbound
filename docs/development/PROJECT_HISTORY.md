@@ -204,6 +204,20 @@ Implemented comprehensive CSV import functionality for Accounts and Contacts wit
 6. Verify job status updates in real-time
 7. Test template downloads work correctly
 
+### Build Fixes
+After initial implementation, two build errors were resolved:
+
+**1. Missing Progress Component**
+- **Issue:** ImportProgress component imported `@/components/ui/progress` which didn't exist
+- **Fix:** Installed shadcn/ui progress component via `npx shadcn@latest add progress`
+- **Commit:** 5b9d076
+
+**2. Missing getJob Function**
+- **Issue:** ImportProgress component tried to import `getJob` from `@/services/jobs` but only `getJobById` existed
+- **Fix:** Added simple `getJob(jobId: string)` function for polling job status
+- **Location:** [web-app/src/services/jobs.ts:118-127](web-app/src/services/jobs.ts#L118-L127)
+- **Implementation:** Direct Supabase query for single job by ID (used for progress polling)
+
 ---
 
 ## 2025-10-21 - Feature: Complete Delete Functionality for All Entities
