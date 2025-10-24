@@ -9,6 +9,7 @@ import {
   Users as TeamIcon,
   Plug,
   ListChecks,
+  Copy,
   type LucideIcon
 } from 'lucide-react'
 
@@ -93,6 +94,12 @@ export const navigationSections: NavSection[] = [
         href: '/jobs',
         icon: ListChecks,
         matchPattern: /^\/jobs/
+      },
+      {
+        label: 'Duplicates',
+        href: '/duplicates',
+        icon: Copy,
+        matchPattern: /^\/duplicates/
       },
       {
         label: 'Team Members',
