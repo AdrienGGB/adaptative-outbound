@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JobWorker } from '@/workers/job-worker';
 import { EnrichmentProcessor } from '@/workers/enrichment-processor';
+import { DuplicateDetector } from '@/workers/duplicate-detector';
 
 // Worker instance (persists across requests in development)
 let workerInstance: JobWorker | null = null;
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
         maxConcurrent: 5, // Process up to 5 jobs concurrently
         processors: [
           new EnrichmentProcessor(),
+          new DuplicateDetector(),
           // Add more processors here as needed
         ],
       });
