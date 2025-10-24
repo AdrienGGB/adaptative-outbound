@@ -1,5 +1,159 @@
 # Project History
 
+## 2025-10-24 - Feature Restructuring: F001 & F030
+
+### Overview
+Restructured F001 (Data Integration Hub) to focus solely on **data quality** features, moving CRM-specific integrations to a new feature F030 (CRM Native Integrations), and avoiding duplication with F005 (API Gateway).
+
+### Rationale
+**User's strategic decision:** Build generic API + webhooks (F005) instead of CRM-specific integrations first, deferring Salesforce/HubSpot OAuth work to a future feature.
+
+**Benefits:**
+- **F001 becomes simpler:** Focus on duplicate detection and enrichment cache only
+- **No overlap with F005:** API Gateway already provides REST API, webhooks, rate limiting
+- **More flexible approach:** Generic API works with ANY system via Zapier/Make.com
+- **Faster time to market:** Implementing duplicate detection is faster than OAuth flows
+
+### Changes Made
+
+#### 1. Updated F001: Data Integration Hub → Data Quality & Import System
+
+**Removed (moved to F030):**
+- Salesforce OAuth and bidirectional sync
+- HubSpot OAuth and bidirectional sync
+- CRM-specific field mappings
+- Database tables: `crm_sync_configs`, `crm_sync_logs`, `crm_field_mappings`, `crm_sync_conflicts`
+- CRM Integration API endpoints
+- CRM Integration UI screens
+
+**Removed (already in F005):**
+- REST API specifications
+- Webhook system
+- API key management
+- Rate limiting
+- API documentation
+
+**Marked as Complete (from F044):**
+- ✅ CSV Import (10K rows in <2 minutes) - Implemented in F044-B
+- ✅ Data Enrichment (Apollo.io) - Implemented in F044-A
+- ✅ Bulk enrichment operations - Implemented in F044-A
+
+**New F001 Scope (to implement):**
+- Duplicate detection algorithm (domain, name, email matching using fuzzy logic)
+- Enrichment cache system (cache Apollo.io results for 30 days)
+- Duplicate management UI (review, merge, ignore)
+- Merge operations with field selection
+
+**Updated Timeline:**
+- **Week 1:** Enrichment Cache + Duplicate Detection algorithm
+- **Week 2:** Duplicate Management UI + Merge operations
+
+**New Status:** 60% Complete (CSV import and enrichment done, duplicate detection and cache pending)
+
+#### 2. Created F030: CRM Native Integrations
+
+**New feature document:** [`docs/features/F030: CRM Native Integrations.md`](../features/F030: CRM Native Integrations.md)
+
+**Priority:** P2 - Nice to Have
+**Timeline:** Week 15-16 (Sprint 4)
+**Dependencies:** F001, F002, F004, F005
+
+**Scope:**
+- Salesforce OAuth 2.0 integration
+- HubSpot OAuth 2.0 integration
+- Bidirectional sync for accounts and contacts
+- Custom field mapping configuration
+- Conflict resolution strategies (last write wins, CRM wins, app wins, manual review)
+- Sync history and audit logs
+- Real-time and scheduled sync
+
+**Database Schema:**
+- `crm_sync_configs` - CRM connection settings and OAuth credentials
+- `crm_sync_logs` - Sync history and performance metrics
+- `crm_field_mappings` - Custom field mapping per entity type
+- `crm_sync_conflicts` - Manual conflict resolution queue
+
+**Implementation Plan:**
+- Week 1: Salesforce OAuth + sync engine
+- Week 2: HubSpot OAuth + UI (field mapping, sync history, conflict resolution)
+
+### Impact Assessment
+
+**F001 (Data Quality):**
+- **Before:** CSV import, CRM sync, enrichment, duplicate detection (too broad)
+- **After:** CSV import (done), enrichment (done), duplicate detection, enrichment cache (focused)
+- **Complexity:** Reduced from ~4 weeks to ~2 weeks of work
+- **Dependencies:** No longer depends on OAuth/CRM APIs
+
+**F005 (API Gateway):**
+- **No changes:** Already includes REST API, webhooks, API keys, rate limiting
+- **Timeline:** Week 7-8 (remains unchanged)
+- **Note:** F005 provides generic integration for ANY system, not just CRMs
+
+**F030 (CRM Native Integrations):**
+- **New feature:** Deferred to Week 15-16
+- **Priority:** P2 (nice to have, not critical)
+- **Alternative:** Users can use F005 REST API + Zapier for CRM integration until F030 is built
+
+### Technical Decisions
+
+1. **API-First Approach:** Build generic REST API (F005) before CRM-specific OAuth
+   - **Benefit:** Works with 5000+ apps via Zapier/Make.com
+   - **Trade-off:** Not native CRM sync, but good enough for MVP
+
+2. **Focus on Data Quality:** F001 now laser-focused on cleaning data
+   - **Duplicate detection** prevents bad data from entering system
+   - **Enrichment cache** reduces API costs
+
+3. **Modular Architecture:** Features are now properly separated
+   - F001: Data quality
+   - F005: API/Webhooks
+   - F030: CRM-specific integrations
+
+### Files Modified
+
+**Updated:**
+- [`docs/features/F001: Data Integration Hub.md`](../features/F001: Data Integration Hub.md)
+  - Changed title to "Data Quality & Import System"
+  - Removed all CRM and API Gateway content
+  - Updated status to 60% complete
+  - Marked CSV import and enrichment as complete
+  - Updated implementation plan to focus on duplicate detection and cache
+
+**Created:**
+- [`docs/features/F030: CRM Native Integrations.md`](../features/F030: CRM Native Integrations.md)
+  - Complete specification for Salesforce and HubSpot integrations
+  - OAuth 2.0 flows and security
+  - Bidirectional sync architecture
+  - Field mapping system
+  - Conflict resolution UI
+
+**Updated:**
+- [`docs/development/PROJECT_HISTORY.md`](../development/PROJECT_HISTORY.md) (this file)
+
+### Deployment Strategy Impact
+
+**No changes to deployment timeline:**
+- F001: Week 3-4 (now just duplicate detection instead of full CRM integration)
+- F005: Week 7-8 (provides API/webhooks for external integrations)
+- F030: Week 15-16 (new feature, deferred)
+
+**User journey:**
+1. **Week 3-4 (F001):** Import data, detect duplicates, cache enrichments
+2. **Week 7-8 (F005):** Connect external systems via REST API + webhooks
+3. **Week 15-16 (F030):** Native Salesforce/HubSpot sync (if needed)
+
+### Key Takeaways
+
+✅ **Simpler F001:** Easier to implement, faster to ship
+✅ **No duplication:** Clear separation between F001, F005, and F030
+✅ **Flexible architecture:** API-first approach supports any integration
+✅ **User-driven:** Restructuring based on user's strategic preference
+
+**Next steps:** Implement F001 (duplicate detection + enrichment cache), then move to F005 (API Gateway).
+
+---
+
 ## 2025-10-21 - Feature: CSV Import System (F044-A)
 
 ### Overview
