@@ -2,11 +2,13 @@
  * Enrichment Job Processor
  *
  * Handles account and contact enrichment using Apollo.io API
+ * with caching layer to reduce API calls
  */
 
 import { createClient } from '@/lib/supabase/server';
 import { createApolloClient } from '@/lib/apollo-client';
 import { JobProcessor, updateJobProgress, logJob } from './job-worker';
+import { checkCache, writeCache } from '@/services/enrichment-cache';
 import type { Job } from '@/types/jobs';
 import type { ApolloOrganization, ApolloPerson } from '@/lib/apollo-client';
 
@@ -77,20 +79,52 @@ export class EnrichmentProcessor implements JobProcessor {
       throw new Error('No domain available for enrichment');
     }
 
-    await updateJobProgress(job.id, 30, `Enriching with domain: ${enrichmentDomain}...`);
-    await logJob(job.id, 'info', `Calling Apollo API for domain: ${enrichmentDomain}`);
+    await updateJobProgress(job.id, 25, `Checking enrichment cache...`);
 
-    // Call Apollo API
-    const enrichmentResult = await apollo.enrichOrganization({
-      domain: enrichmentDomain,
-    });
+    // Check cache first
+    const cacheResult = await checkCache(
+      job.workspace_id,
+      'apollo',
+      'domain',
+      enrichmentDomain
+    );
 
-    if (!enrichmentResult.organization) {
-      await logJob(job.id, 'warning', 'No organization data returned from Apollo');
-      throw new Error('No organization data found for domain');
+    let org: ApolloOrganization;
+    let enrichmentResult: any;
+
+    if (cacheResult.found && cacheResult.data) {
+      await logJob(job.id, 'info', `Cache HIT for domain: ${enrichmentDomain}`);
+      await updateJobProgress(job.id, 40, 'Using cached enrichment data...');
+
+      org = cacheResult.data as ApolloOrganization;
+      enrichmentResult = { organization: org, credits_used: 0 }; // No credits used for cache hit
+    } else {
+      await logJob(job.id, 'info', `Cache MISS for domain: ${enrichmentDomain}`);
+      await updateJobProgress(job.id, 30, `Enriching with domain: ${enrichmentDomain}...`);
+      await logJob(job.id, 'info', `Calling Apollo API for domain: ${enrichmentDomain}`);
+
+      // Call Apollo API
+      enrichmentResult = await apollo.enrichOrganization({
+        domain: enrichmentDomain,
+      });
+
+      if (!enrichmentResult.organization) {
+        await logJob(job.id, 'warning', 'No organization data returned from Apollo');
+        throw new Error('No organization data found for domain');
+      }
+
+      org = enrichmentResult.organization;
+
+      // Write to cache for future use
+      await logJob(job.id, 'info', 'Writing enrichment data to cache...');
+      await writeCache({
+        workspace_id: job.workspace_id,
+        provider: 'apollo',
+        lookup_type: 'domain',
+        lookup_value: enrichmentDomain,
+        enrichment_data: org,
+      });
     }
-
-    const org = enrichmentResult.organization;
 
     await updateJobProgress(job.id, 60, 'Processing enrichment data...');
 
@@ -246,28 +280,64 @@ export class EnrichmentProcessor implements JobProcessor {
       throw new Error('Email or LinkedIn URL required for contact enrichment');
     }
 
-    await updateJobProgress(job.id, 30, 'Enriching contact data...');
-    await logJob(
-      job.id,
-      'info',
-      `Calling Apollo API with: ${enrichmentEmail ? `email=${enrichmentEmail}` : `linkedin=${enrichmentLinkedIn}`}`
+    await updateJobProgress(job.id, 25, 'Checking enrichment cache...');
+
+    // Use email as cache key (most reliable identifier)
+    const cacheKey = enrichmentEmail || enrichmentLinkedIn || '';
+    const lookupType = enrichmentEmail ? 'email' : 'linkedin_url';
+
+    // Check cache first
+    const cacheResult = await checkCache(
+      job.workspace_id,
+      'apollo',
+      lookupType as any,
+      cacheKey
     );
 
-    // Call Apollo API
-    const enrichmentResult = await apollo.enrichPerson({
-      email: enrichmentEmail,
-      first_name: enrichmentFirstName,
-      last_name: enrichmentLastName,
-      linkedin_url: enrichmentLinkedIn,
-      domain: (contact as any).accounts?.domain,
-    });
+    let person: ApolloPerson;
+    let enrichmentResult: any;
 
-    if (!enrichmentResult.person) {
-      await logJob(job.id, 'warning', 'No person data returned from Apollo');
-      throw new Error('No person data found');
+    if (cacheResult.found && cacheResult.data) {
+      await logJob(job.id, 'info', `Cache HIT for contact: ${cacheKey}`);
+      await updateJobProgress(job.id, 40, 'Using cached enrichment data...');
+
+      person = cacheResult.data as ApolloPerson;
+      enrichmentResult = { person, credits_used: 0 }; // No credits used for cache hit
+    } else {
+      await logJob(job.id, 'info', `Cache MISS for contact: ${cacheKey}`);
+      await updateJobProgress(job.id, 30, 'Enriching contact data...');
+      await logJob(
+        job.id,
+        'info',
+        `Calling Apollo API with: ${enrichmentEmail ? `email=${enrichmentEmail}` : `linkedin=${enrichmentLinkedIn}`}`
+      );
+
+      // Call Apollo API
+      enrichmentResult = await apollo.enrichPerson({
+        email: enrichmentEmail,
+        first_name: enrichmentFirstName,
+        last_name: enrichmentLastName,
+        linkedin_url: enrichmentLinkedIn,
+        domain: (contact as any).accounts?.domain,
+      });
+
+      if (!enrichmentResult.person) {
+        await logJob(job.id, 'warning', 'No person data returned from Apollo');
+        throw new Error('No person data found');
+      }
+
+      person = enrichmentResult.person;
+
+      // Write to cache for future use
+      await logJob(job.id, 'info', 'Writing enrichment data to cache...');
+      await writeCache({
+        workspace_id: job.workspace_id,
+        provider: 'apollo',
+        lookup_type: lookupType as any,
+        lookup_value: cacheKey,
+        enrichment_data: person,
+      });
     }
-
-    const person = enrichmentResult.person;
 
     await updateJobProgress(job.id, 60, 'Processing enrichment data...');
 
