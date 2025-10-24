@@ -1,0 +1,4 @@
+name,domain,email,annual_revenue_cents,city
+Acme Corp,acme.com,not-an-email,not-a-number,San Francisco
+Valid Corp,valid.com,valid@email.com,100000000,New York
+Bad Date Corp,baddate.com,email@test.com,5000000,Chicago
