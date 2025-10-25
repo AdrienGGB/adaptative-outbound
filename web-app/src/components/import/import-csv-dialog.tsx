@@ -159,7 +159,7 @@ export function ImportCsvDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-[90vw] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Import {entityLabels[entityType]}</DialogTitle>
         </DialogHeader>
